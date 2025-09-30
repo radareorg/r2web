@@ -37,7 +37,7 @@ export default function Radare2Terminal() {
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const version = urlParams.get("version") || "6.0.3";
+        const version = urlParams.get("version") || "6.0.4";
         setCurrentVersion(version);
         const doCache = urlParams.get("cache") === "true";
         async function initializeWasmer() {
@@ -60,7 +60,7 @@ export default function Radare2Terminal() {
             setDownloadProgress(30);
 
             let response: Response;
-            const wasmUrl = version === "6.0.3"
+            const wasmUrl = version === "6.0.4"
                 ? "https://radareorg.github.io/r2wasm/radare2.wasm"
                 : import.meta.env.MODE === "production"
                     ? `https://${import.meta.env.VITE_VERCEL_PROJECT_PRODUCTION_URL}/api/vercel?version=${version}`
