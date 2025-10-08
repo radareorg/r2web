@@ -20,6 +20,7 @@ export default function Radare2Terminal() {
     const [cachedVersions, setCachedVersions] = useState<string[]>([]);
     const [showCachedVersions, setShowCachedVersions] = useState(false);
     const [currentVersion, setCurrentVersion] = useState<string>("");
+    const [showShortcuts, setShowShortcuts] = useState(false);
 
     // Tabs state
     const [tabs, setTabs] = useState<number[]>([0]);
@@ -281,7 +282,98 @@ export default function Radare2Terminal() {
                     border-radius: 6px;
                     border: none;
                 }
+
+                .shortcuts-modal {
+                    position: fixed;
+                    inset: 50% auto auto 50%;
+                    transform: translate(-50%, -50%);
+                    background: #1e1e1e;
+                    padding: 20px;
+                    border-radius: 12px;
+                    border: 1px solid #333;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                    z-index: 1001;
+                    color: #fff;
+                    max-width: 90vw;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                }
+                .shortcuts-backdrop {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 1000;
+                }
+                .shortcuts-grid {
+                    display: grid;
+                    grid-template-columns: auto auto;
+                    gap: 12px;
+                    margin-top: 16px;
+                }
+                .shortcuts-grid div {
+                    display: contents;
+                }
+                .shortcuts-grid span:first-child {
+                    color: #888;
+                }
+                .shortcuts-grid span:last-child {
+                    font-family: monospace;
+                    background: #333;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                }
             `}</style>
+
+            {showShortcuts && (
+                <>
+                    <div className="shortcuts-backdrop" onClick={() => setShowShortcuts(false)} />
+                    <div className="shortcuts-modal">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ margin: 0 }}>Keyboard Shortcuts</h3>
+                            <button className="icon-btn ghost" onClick={() => setShowShortcuts(false)}>×</button>
+                        </div>
+                        <div className="shortcuts-grid">
+                            <div>
+                                <span>Switch to tab</span>
+                                <span>Alt + 1-9</span>
+                            </div>
+                            <div>
+                                <span>Next tab</span>
+                                <span>Alt + →</span>
+                            </div>
+                            <div>
+                                <span>Previous tab</span>
+                                <span>Alt + ←</span>
+                            </div>
+                            <div>
+                                <span>Cancel current operation</span>
+                                <span>Ctrl + C</span>
+                            </div>
+                            <div>
+                                <span>Paste from clipboard</span>
+                                <span>Ctrl + V</span>
+                            </div>
+                            <div>
+                                <span>Restart session</span>
+                                <span>Ctrl + R</span>
+                            </div>
+                            <div>
+                                <span>Clear terminal</span>
+                                <span>Ctrl + L</span>
+                            </div>
+                            <div>
+                                <span>Search</span>
+                                <span>Ctrl + F</span>
+                            </div>
+                            <div>
+                                <span>Go to address</span>
+                                <span>Ctrl + G</span>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             {isDownloading && (
                 <div
                     style={{
@@ -832,6 +924,11 @@ export default function Radare2Terminal() {
                                         }}
                                         style={{ display: "none" }}
                                     />
+                                </div>
+                                <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                                    <button onClick={() => setShowShortcuts(true)} className="ghost">
+                                        Shortcuts
+                                    </button>
                                 </div>
                             </div>
                         )}
