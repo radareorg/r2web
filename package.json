@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "cc": "concurrently \"vite\" \"node api/wasm.js\"",
+    "cc": "concurrently \"vite\" \"node api/wasm.cjs\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
