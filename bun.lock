@@ -7,6 +7,7 @@
         "@wasmer/sdk": "^0.9.0",
         "@xterm/addon-clipboard": "^0.1.0",
         "@xterm/addon-search": "^0.15.0",
+        "@xterm/addon-web-links": "^0.11.0",
         "axios": "^1.11.0",
         "coi-serviceworker": "^0.1.7",
         "cors": "^2.8.5",
@@ -258,6 +259,8 @@
     "@xterm/addon-clipboard": ["@xterm/addon-clipboard@0.1.0", "", { "dependencies": { "js-base64": "^3.7.5" }, "peerDependencies": { "@xterm/xterm": "^5.4.0" } }, "sha512-zdoM7p53T5sv/HbRTyp4hY0kKmEQ3MZvAvEtiXqNIHc/JdpqwByCtsTaQF5DX2n4hYdXRPO4P/eOS0QEhX1nPw=="],
 
     "@xterm/addon-search": ["@xterm/addon-search@0.15.0", "", { "peerDependencies": { "@xterm/xterm": "^5.0.0" } }, "sha512-ZBZKLQ+EuKE83CqCmSSz5y1tx+aNOCUaA7dm6emgOX+8J9H1FWXZyrKfzjwzV+V14TV3xToz1goIeRhXBS5qjg=="],
+
+    "@xterm/addon-web-links": ["@xterm/addon-web-links@0.11.0", "", { "peerDependencies": { "@xterm/xterm": "^5.0.0" } }, "sha512-nIHQ38pQI+a5kXnRaTgwqSHnX7KE6+4SVoceompgHL26unAxdfP6IPqUTSYPQgSwM56hsElfoNrrW5V7BUED/Q=="],
 
     "@xterm/xterm": ["@xterm/xterm@5.5.0", "", {}, "sha512-hqJHYaQb5OptNunnyAnkHyM8aCjZ1MEIDTQu1iIbbTD/xops91NB5yq1ZK/dC2JDbVWtF23zUtl9JE2NqwT87A=="],
 

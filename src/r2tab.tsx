@@ -3,6 +3,7 @@ import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { ClipboardAddon } from "@xterm/addon-clipboard";
+import { WebLinksAddon } from '@xterm/addon-web-links';
 import { fileStore } from "./store/FileStore";
 import "xterm/css/xterm.css";
 import { Directory, type Instance, type Wasmer } from "@wasmer/sdk";
@@ -105,14 +106,34 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
         const fit = new FitAddon();
         const search = new SearchAddon();
         const clipboard = new ClipboardAddon();
+        const linkAddon = new WebLinksAddon(activateLink, linkHandler);
         term.loadAddon(fit);
         term.loadAddon(search);
         term.loadAddon(clipboard);
+        term.loadAddon(linkAddon);
         term.open(terminalRef.current);
         fit.fit();
         setTermInstance(term);
         setFitAddon(fit);
         setSearchAddon(search);
+
+        const fullWidthLine = (char: string) => char.repeat(term.cols);
+
+        const centerPad = (text: string) => {
+            const padding = Math.max(0, term.cols - text.length);
+            const left = Math.floor(padding / 2);
+            const right = padding - left;
+            return " ".repeat(left) + text + " ".repeat(right);
+        };
+
+        const welcomeLines = [
+            fullWidthLine("-"),
+            centerPad("Welcome to r2web!"),
+            centerPad("Source: https://github.com/AbhiTheModder/r2web"),
+            fullWidthLine("-"),
+            ""
+        ];
+        welcomeLines.forEach(line => term.writeln(line));
         term.writeln("Starting...");
         return () => {
             term.dispose();
@@ -351,3 +372,63 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
 });
 
 export type { R2TabHandle };
+
+let _linkPopup: HTMLDivElement | undefined;
+
+function isMac() {
+    return typeof navigator !== "undefined" && /Mac/.test(navigator.platform);
+}
+
+function activateLink(event: MouseEvent, uri: string) {
+    if (isMac() ? event.metaKey : event.ctrlKey) {
+        window.open(uri, '_blank');
+    }
+}
+
+function removeLinkPopup(_event: MouseEvent) {
+    if (_linkPopup) {
+        _linkPopup.remove();
+        _linkPopup = undefined;
+    }
+}
+
+function showLinkPopup(event: MouseEvent, _text: string) {
+    removeLinkPopup(event);
+    const popup = document.createElement('div');
+    popup.classList.add('xterm-link-popup');
+    popup.style.maxWidth = '260px';
+    popup.style.wordBreak = 'break-word';
+    popup.style.position = 'fixed';
+    popup.style.top = (event.clientY + 25) + 'px';
+
+    const container = (event.target as HTMLElement).parentNode as HTMLElement;
+    container.appendChild(popup);
+
+    let left = event.clientX + 5;
+    const overflow = left + popup.offsetWidth - container.clientWidth;
+    if (overflow > 0) {
+        left = Math.max(0, left - overflow - 5);
+    }
+    popup.style.left = left + 'px';
+
+    // popup.innerText = text;
+    // popup.appendChild(document.createElement('br'));
+
+    const hint = document.createElement('i');
+    hint.innerText = `(${isMac() ? 'Cmd' : 'Ctrl'}+Click to open link)`;
+    popup.appendChild(hint);
+
+    const popupHeight = popup.offsetHeight;
+    if (event.clientY + 25 + popupHeight > container.clientHeight) {
+        let y = event.clientY - 25 - popupHeight;
+        popup.style.top = (y < 0 ? 0 : y) + 'px';
+    }
+    _linkPopup = popup;
+}
+
+const linkHandler = {
+    activate: activateLink,
+    hover: showLinkPopup,
+    leave: removeLinkPopup,
+    allowNonHttpProtocols: true
+};
