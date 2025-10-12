@@ -22,7 +22,7 @@ export default function Home() {
     const [file, setFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [selectedVersion, setSelectedVersion] = useState("6.0.4");
+    const [selectedVersion, setSelectedVersion] = useState("6.0.5");
     const [cacheVersion, setCacheVersion] = useState(false);
     const navigate = useNavigate();
 
@@ -32,7 +32,7 @@ export default function Home() {
         }
     };
     const [r2Versions, setR2Versions] = useState([
-        { value: "6.0.4", label: "r2 6.0.4" },
+        { value: "6.0.5", label: "r2 6.0.5" },
     ]);
     useEffect(() => {
         const fetchR2Versions = async () => {
@@ -42,7 +42,7 @@ export default function Home() {
                 const versions = data.map((release: { tag_name: any; }) => ({
                     value: release.tag_name,
                     label: `r2 ${release.tag_name}`,
-                })).filter((version: { value: string; }) => version.value !== "6.0.4");
+                })).filter((version: { value: string; }) => version.value !== "6.0.5");
                 setR2Versions(prevVersions => [...prevVersions, ...versions]);
             } catch (error) {
                 console.error('Error fetching r2 versions:', error);
