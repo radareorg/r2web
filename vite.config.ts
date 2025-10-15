@@ -16,10 +16,16 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-  entryFileNames: 'index.mjs',
-  chunkFileNames: '[name].js',
-  assetFileNames: '[name].[ext]',
-},
+        entryFileNames: 'index.mjs',
+        chunkFileNames: '[name].js',
+        assetFileNames: '[name].[ext]',
+        manualChunks: {
+          wasmer: ['@wasmer/sdk'],
+          react: ['react', 'react-dom'],
+          xterm: ['xterm', 'xterm-addon-fit'],
+          addons: ['@xterm/addon-search', '@xterm/addon-clipboard', '@xterm/addon-web-links'],
+        },
+      },
     },
   },
 })
