@@ -120,7 +120,7 @@ export default function Home() {
     return (
         <>
             <style>{`
-                html, body, #root { height: 100%; font-family: 'Menlo', 'Monaco', 'Courier New', monospace; }
+                html, body, #root { height: 100%; font-family: 'Courier New', monospace; }
                 html, body { margin: 0; padding: 0; overscroll-behavior: none; background: #0a0a0a; color: #e0e0e0; }
                 /* Global scroll container configured in main.tsx (.app-root) */
                 select, input[type="checkbox"] { font-family: inherit; }
