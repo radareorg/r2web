@@ -32,6 +32,80 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
     const [dir, setDir] = useState<Directory | null>(null);
     const onDataDisposableRef = useRef<any>(null);
     const [instance, setInstance] = useState<Instance | null>(null);
+    const [rawMode, setRawMode] = useState<boolean>(false);
+    const fakePtyRef = useRef<FakePty | null>(null);
+
+    // Key buffer for WASM imports (r2_js_key_next)
+    // This can be populated if you want direct key handling, but by default
+    // we return -1 to let r2 fall back to getchar() which reads from stdin
+    const keyBufferRef = useRef<number[]>([]);
+
+    // Create WASM imports for r2
+    // IMPORTANT: These imports are OPTIONAL. The r2 WASM build checks if each
+    // import is available (null check) before calling. If not available, r2
+    // falls back to its default behavior. This ensures compatibility with:
+    // - Older r2 builds without import support
+    // - Different build configurations
+    // - Manual user controls (e.g., raw mode checkbox)
+    const createWasmImports = () => ({
+        r2: {
+            // is_tty: Returns whether we're running in a TTY (always true for xterm.js)
+            // This is called from r_cons_is_tty() in radare2/libr/cons/cons.c:849
+            // NOTE: Optional - r2 will use its own detection if import not available
+            is_tty: (): number => {
+                try {
+                    console.log("[WASM Import] is_tty called - returning 1 (true)");
+                    return 1; // Always return true in web terminal
+                } catch (e) {
+                    console.warn("[WASM Import] is_tty failed:", e);
+                    return 1; // Default to true
+                }
+            },
+
+            // key_next: Returns the next key from the buffer
+            // This is called from r_cons_readchar() in radare2/libr/cons/input.c:636
+            // NOTE: Optional - r2 will fall back to getchar() if import not available or returns -1
+            key_next: (): number => {
+                try {
+                    // If there are keys in the buffer, return the next one
+                    if (keyBufferRef.current.length > 0) {
+                        const key = keyBufferRef.current.shift();
+                        console.log(`[WASM Import] key_next called - returning ${key}`);
+                        return key ?? -1;
+                    }
+                    // No keys available - return -1 to signal r2 to use getchar()
+                    // getchar() will read from stdin which is piped from the terminal
+                    console.log("[WASM Import] key_next called - no keys, returning -1");
+                    return -1;
+                } catch (e) {
+                    console.warn("[WASM Import] key_next failed:", e);
+                    return -1; // Fallback to stdin
+                }
+            },
+
+            // set_raw_mode: Called when r2 switches between raw and canonical mode
+            // This is called from r_cons_set_raw() in radare2/libr/cons/cons.c:1291
+            // NOTE: This is optional - older r2 builds without import support won't call this
+            set_raw_mode: (raw: number): void => {
+                try {
+                    const isRaw = raw !== 0;
+                    console.log(`[WASM Import] set_raw_mode called - switching to ${isRaw ? 'raw' : 'canonical'} mode`);
+
+                    // Update the rawMode state to sync with r2's terminal mode
+                    // This updates the UI checkbox and can be used by terminal input handlers
+                    setRawMode(isRaw);
+
+                    // If FakePty is integrated, update its mode
+                    if (fakePtyRef.current) {
+                        fakePtyRef.current.mode = isRaw ? "raw" : "canonical";
+                    }
+                } catch (e) {
+                    // Silently ignore errors - import support is optional
+                    console.warn("[WASM Import] set_raw_mode failed:", e);
+                }
+            },
+        },
+    });
 
     const restartSession = async () => {
         if (!pkg || !termInstance) return;
@@ -67,6 +141,7 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
                 },
                 mydir,
             },
+            imports: createWasmImports(),
         });
 
         setInstance(newInstance);
@@ -328,6 +403,7 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
                     ["./"]: { [file.name]: file.data },
                     mydir,
                 },
+                imports: createWasmImports(),
             });
             setInstance(newInstance);
             connectStreams(newInstance, termInstance);
