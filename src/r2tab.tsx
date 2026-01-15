@@ -129,7 +129,7 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
         const welcomeLines = [
             fullWidthLine("-"),
             centerPad("Welcome to r2web!"),
-            centerPad("Source: https://github.com/AbhiTheModder/r2web"),
+            centerPad("Source: https://github.com/radareorg/r2web"),
             fullWidthLine("-"),
             ""
         ];

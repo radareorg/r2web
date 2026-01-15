@@ -38,7 +38,7 @@ r2web uses:
 
 To run locally:
 ```shell
-git clone https://github.com/AbhiTheModder/r2web.git
+git clone https://github.com/radareorg/r2web.git
 cd r2web
 bun install
 bun dev

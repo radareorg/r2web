@@ -421,4 +421,3 @@ const styles = {
         transition: "color 0.2s ease",
     },
 } as const;
-
