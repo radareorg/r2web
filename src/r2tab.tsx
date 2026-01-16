@@ -146,7 +146,7 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
         setr2Writer(stdin);
 
         let cancelController: AbortController | null = null;
-        let history: string[] = [];
+        const history: string[] = [];
         let historyIndex = -1;
         let currentInput = '';
         onDataDisposableRef.current?.dispose();
@@ -420,7 +420,7 @@ function showLinkPopup(event: MouseEvent, _text: string) {
 
     const popupHeight = popup.offsetHeight;
     if (event.clientY + 25 + popupHeight > container.clientHeight) {
-        let y = event.clientY - 25 - popupHeight;
+        const y = event.clientY - 25 - popupHeight;
         popup.style.top = (y < 0 ? 0 : y) + 'px';
     }
     _linkPopup = popup;
