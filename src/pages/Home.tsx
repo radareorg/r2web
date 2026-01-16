@@ -178,6 +178,18 @@ export default function Home() {
                             onDragOver={onDragOver}
                             onDragLeave={onDragLeave}
                             onDrop={onDrop}
+                            onMouseEnter={(e) => {
+                                if (!isDragging) {
+                                    e.currentTarget.style.borderColor = '#666';
+                                    e.currentTarget.style.background = '#1a1a1a';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isDragging) {
+                                    e.currentTarget.style.borderColor = '#444';
+                                    e.currentTarget.style.background = 'transparent';
+                                }
+                            }}
                             style={{
                                 ...styles.dropZone,
                                 border: `1px ${isDragging ? '#00aa00' : 'dashed #444'}`,
