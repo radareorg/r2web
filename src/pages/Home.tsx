@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { fileStore } from "../store/FileStore";
 import { useNavigate } from "react-router-dom";
 
@@ -29,6 +29,7 @@ export default function Home() {
     const [cacheVersion, setCacheVersion] = useState(false);
     const [loadingVersions, setLoadingVersions] = useState(true);
     const navigate = useNavigate();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.length) {
@@ -173,6 +174,7 @@ export default function Home() {
                         </div>
 
                         <div
+                            onClick={() => fileInputRef.current?.click()}
                             onDragOver={onDragOver}
                             onDragLeave={onDragLeave}
                             onDrop={onDrop}
@@ -180,6 +182,7 @@ export default function Home() {
                                 ...styles.dropZone,
                                 border: `1px ${isDragging ? '#00aa00' : 'dashed #444'}`,
                                 background: isDragging ? '#001100' : 'transparent',
+                                cursor: 'pointer',
                             }}
                         >
                             <UploadIcon style={{ color: isDragging ? '#00aa00' : '#666' }} />
@@ -187,10 +190,11 @@ export default function Home() {
                                 Drag & drop your file here
                             </p>
                             <p style={styles.orText}>or</p>
-                            <label htmlFor="file-upload" style={styles.browseLabel}>
+                            <p style={styles.browseLabel}>
                                 browse to upload
-                            </label>
+                            </p>
                             <input
+                                ref={fileInputRef}
                                 id="file-upload"
                                 type="file"
                                 onChange={onFileChange}
