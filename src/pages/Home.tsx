@@ -134,7 +134,7 @@ export default function Home() {
                             Radare2 Web
                         </h1>
                         <p style={styles.subtitle}>
-                            Upload binary files for reverse engineering analysis
+                            Inspect, modify, and explore binaries directly in your browser.
                         </p>
 
                         <div style={styles.versionSelector}>

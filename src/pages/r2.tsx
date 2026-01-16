@@ -4,7 +4,23 @@ import wasmerSDKModule from "@wasmer/sdk/wasm?url";
 import "xterm/css/xterm.css";
 import { type Wasmer } from "@wasmer/sdk";
 import { R2Tab, type R2TabHandle } from "../r2tab";
+import { useNavigate } from "react-router-dom";
 
+const HomeIcon = ({ style }: { style?: React.CSSProperties }) => (
+    <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={style}
+    >
+        <path
+            d="M10 20V14H14V20H19V12H22L12 3L2 12H5V20H10Z"
+            fill="currentColor"
+        />
+    </svg>
+);
 
 export default function Radare2Terminal() {
     const [pkg, setPkg] = useState<Wasmer | null>(null);
@@ -21,18 +37,26 @@ export default function Radare2Terminal() {
     const [showCachedVersions, setShowCachedVersions] = useState(false);
     const [currentVersion, setCurrentVersion] = useState<string>("");
     const [showShortcuts, setShowShortcuts] = useState(false);
+    const navigate = useNavigate();
 
     // Tabs state
     const [tabs, setTabs] = useState<number[]>([0]);
     const [activeTab, setActiveTab] = useState(0);
-    const tabRefs = useRef<Record<number, React.RefObject<R2TabHandle | null>>>({});
-    if (!tabRefs.current[0]) tabRefs.current[0] = createRef<R2TabHandle | null>();
+    const tabRefs = useRef<Record<number, React.RefObject<R2TabHandle | null>>>(
+        {},
+    );
+    if (!tabRefs.current[0])
+        tabRefs.current[0] = createRef<R2TabHandle | null>();
 
     async function fetchCachedVersions() {
         const cache = await caches.open("wasm-cache");
         const keys = await cache.keys();
         // console.log("Cached versions:", keys);
-        setCachedVersions(keys.map((request) => new URL(request.url).pathname.replace("/", "")));
+        setCachedVersions(
+            keys.map((request) =>
+                new URL(request.url).pathname.replace("/", ""),
+            ),
+        );
     }
     fetchCachedVersions();
 
@@ -61,11 +85,12 @@ export default function Radare2Terminal() {
             setDownloadProgress(30);
 
             let response: Response;
-            const wasmUrl = version === "6.0.8"
-                ? "https://radareorg.github.io/r2wasm/radare2.wasm"
-                : import.meta.env.MODE === "production"
-                    ? `https://${import.meta.env.VITE_VERCEL_PROJECT_PRODUCTION_URL}/api/vercel?version=${version}`
-                    : `http://localhost:3000/wasm/${version}`;
+            const wasmUrl =
+                version === "6.0.8"
+                    ? "https://radareorg.github.io/r2wasm/radare2.wasm"
+                    : import.meta.env.MODE === "production"
+                      ? `https://${import.meta.env.VITE_VERCEL_PROJECT_PRODUCTION_URL}/api/vercel?version=${version}`
+                      : `http://localhost:3000/wasm/${version}`;
             try {
                 response = await fetch(wasmUrl);
             } catch (e) {
@@ -90,7 +115,10 @@ export default function Radare2Terminal() {
                     loaded += value.length;
 
                     if (total > 0) {
-                        const progress = Math.min(30 + (loaded / total) * 50, 80);
+                        const progress = Math.min(
+                            30 + (loaded / total) * 50,
+                            80,
+                        );
                         setDownloadProgress(progress);
                     }
                 }
@@ -99,7 +127,10 @@ export default function Radare2Terminal() {
             setDownloadPhase("processing");
             setDownloadProgress(85);
 
-            const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+            const totalLength = chunks.reduce(
+                (sum, chunk) => sum + chunk.length,
+                0,
+            );
             const buffer = new Uint8Array(totalLength);
             let offset = 0;
             for (const chunk of chunks) {
@@ -126,7 +157,12 @@ export default function Radare2Terminal() {
 
         initializeWasmer();
 
-        return () => { };
+        return () => {
+            tabs.forEach((id) => {
+                const ref = tabRefs.current[id]?.current;
+                ref?.dispose();
+            });
+        };
     }, []);
 
     const handleSearch = () => {
@@ -147,6 +183,21 @@ export default function Radare2Terminal() {
             caseSensitive: searchCaseSensitive,
             regex: searchRegex,
         });
+    };
+
+    const handleNavigateHome = async () => {
+        tabs.forEach((id) => {
+            const ref = tabRefs.current[id]?.current;
+            ref?.dispose();
+        });
+
+        if (pkg) {
+            setPkg(null);
+        }
+
+        fileStore.clear();
+
+        navigate("/");
     };
 
     const file = fileStore.getFile();
@@ -171,32 +222,39 @@ export default function Radare2Terminal() {
         const onKey = (e: KeyboardEvent) => {
             // Ignore when typing in inputs
             const target = e.target as HTMLElement | null;
-            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+            if (
+                target &&
+                (target.tagName === "INPUT" ||
+                    target.tagName === "TEXTAREA" ||
+                    target.isContentEditable)
+            )
+                return;
             if (e.altKey) {
-                if (e.code.startsWith('Digit')) {
-                    const num = parseInt(e.code.replace('Digit', ''), 10);
+                if (e.code.startsWith("Digit")) {
+                    const num = parseInt(e.code.replace("Digit", ""), 10);
                     if (num >= 1 && num <= 9) {
                         e.preventDefault();
                         const idx = Math.min(num - 1, tabs.length - 1);
                         setActiveTab(tabs[idx]);
                     }
-                } else if (e.code === 'ArrowRight') {
+                } else if (e.code === "ArrowRight") {
                     e.preventDefault();
                     const order = tabs;
                     const curIndex = order.indexOf(activeTab);
                     const next = order[(curIndex + 1) % order.length];
                     setActiveTab(next);
-                } else if (e.code === 'ArrowLeft') {
+                } else if (e.code === "ArrowLeft") {
                     e.preventDefault();
                     const order = tabs;
                     const curIndex = order.indexOf(activeTab);
-                    const next = order[(curIndex - 1 + order.length) % order.length];
+                    const next =
+                        order[(curIndex - 1 + order.length) % order.length];
                     setActiveTab(next);
                 }
             }
         };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
     }, [tabs, activeTab]);
 
     useEffect(() => {
@@ -326,11 +384,26 @@ export default function Radare2Terminal() {
 
             {showShortcuts && (
                 <>
-                    <div className="shortcuts-backdrop" onClick={() => setShowShortcuts(false)} />
+                    <div
+                        className="shortcuts-backdrop"
+                        onClick={() => setShowShortcuts(false)}
+                    />
                     <div className="shortcuts-modal">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: "16px",
+                            }}
+                        >
                             <h3 style={{ margin: 0 }}>Keyboard Shortcuts</h3>
-                            <button className="icon-btn ghost" onClick={() => setShowShortcuts(false)}>×</button>
+                            <button
+                                className="icon-btn ghost"
+                                onClick={() => setShowShortcuts(false)}
+                            >
+                                ×
+                            </button>
                         </div>
                         <div className="shortcuts-grid">
                             <div>
@@ -406,8 +479,10 @@ export default function Radare2Terminal() {
                             fontWeight: "300",
                         }}
                     >
-                        {downloadPhase === "initializing" && "Initializing Radare2..."}
-                        {downloadPhase === "downloading" && "Downloading Radare2..."}
+                        {downloadPhase === "initializing" &&
+                            "Initializing Radare2..."}
+                        {downloadPhase === "downloading" &&
+                            "Downloading Radare2..."}
                         {downloadPhase === "processing" && "Processing..."}
                         {downloadPhase === "complete" && "Ready!"}
                     </h2>
@@ -428,7 +503,9 @@ export default function Radare2Terminal() {
                                 width: `${downloadProgress}%`,
                                 height: "8px",
                                 backgroundColor:
-                                    downloadPhase === "complete" ? "#27ae60" : "#3498db",
+                                    downloadPhase === "complete"
+                                        ? "#27ae60"
+                                        : "#3498db",
                                 borderRadius: "6px",
                                 transition: "all 0.3s ease",
                                 background:
@@ -475,12 +552,14 @@ export default function Radare2Terminal() {
                             maxWidth: "400px",
                         }}
                     >
-                        {downloadPhase === "initializing" && "Setting up runtime..."}
+                        {downloadPhase === "initializing" &&
+                            "Setting up runtime..."}
                         {downloadPhase === "downloading" &&
                             "Downloading radare2 (will not download again in future)..."}
                         {downloadPhase === "processing" &&
                             "Initializing radare2 instance..."}
-                        {downloadPhase === "complete" && "Radare2 is ready to use!"}
+                        {downloadPhase === "complete" &&
+                            "Radare2 is ready to use!"}
                     </p>
 
                     <style>{`
@@ -489,7 +568,7 @@ export default function Radare2Terminal() {
                         50% { transform: scale(1.05); opacity: 0.8; }
                         100% { transform: scale(1); opacity: 1; }
                     }
-                    
+
                     @keyframes shimmer {
                         0% { left: -100%; }
                         100% { left: 100%; }
@@ -497,69 +576,118 @@ export default function Radare2Terminal() {
                 `}</style>
                 </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
+                }}
+            >
                 {/* Tabs bar */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    height: '36px', padding: '4px 6px',
-                    backgroundColor: '#111', color: '#fff',
-                    overflowX: 'auto',
-                    borderBottom: '1px solid #333',
-                    flexShrink: 0
-                }}>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        height: "36px",
+                        padding: "4px 6px",
+                        backgroundColor: "#111",
+                        color: "#fff",
+                        overflowX: "auto",
+                        borderBottom: "1px solid #333",
+                        flexShrink: 0,
+                    }}
+                >
+                    <div style={{ display: "flex", gap: "6px" }}>
                         {tabs.map((id, i) => (
                             <button
                                 key={id}
                                 onClick={() => setActiveTab(id)}
-                                className={`tab-button ${id === activeTab ? 'active' : 'inactive'}`}
+                                className={`tab-button ${id === activeTab ? "active" : "inactive"}`}
                                 style={{
-                                    whiteSpace: 'nowrap',
-                                    maxWidth: '160px',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    padding: '6px 10px',
-                                    borderRadius: '6px',
-                                    color: '#fff',
-                                    border: '1px solid #333',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px'
-                                }}>
-                                <span>{`Tab ${i + 1}`}{file ? `: ${file.name}` : ''}</span>
-                                <span onClick={(e) => {
-                                    e.stopPropagation();
-                                    const ref = tabRefs.current[id]?.current;
-                                    ref?.dispose();
-                                    setTabs((prev) => {
-                                        const idx = prev.indexOf(id);
-                                        const remaining = prev.filter((tid) => tid !== id);
-                                        if (activeTab === id) {
-                                            const nextActive = remaining.length ? remaining[Math.max(0, idx - 1)] : -1;
-                                            setActiveTab(nextActive);
-                                        }
-                                        return remaining;
-                                    });
-                                }} style={{ cursor: 'pointer', opacity: 0.8 }}>×</span>
+                                    whiteSpace: "nowrap",
+                                    maxWidth: "160px",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    padding: "6px 10px",
+                                    borderRadius: "6px",
+                                    color: "#fff",
+                                    border: "1px solid #333",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                }}
+                            >
+                                <span>
+                                    {`Tab ${i + 1}`}
+                                    {file ? `: ${file.name}` : ""}
+                                </span>
+                                <span
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const ref =
+                                            tabRefs.current[id]?.current;
+                                        ref?.dispose();
+                                        setTabs((prev) => {
+                                            const idx = prev.indexOf(id);
+                                            const remaining = prev.filter(
+                                                (tid) => tid !== id,
+                                            );
+                                            if (activeTab === id) {
+                                                const nextActive =
+                                                    remaining.length
+                                                        ? remaining[
+                                                              Math.max(
+                                                                  0,
+                                                                  idx - 1,
+                                                              )
+                                                          ]
+                                                        : -1;
+                                                setActiveTab(nextActive);
+                                            }
+                                            return remaining;
+                                        });
+                                    }}
+                                    style={{ cursor: "pointer", opacity: 0.8 }}
+                                >
+                                    ×
+                                </span>
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => {
-                        setTabs((prev) => {
-                            const nextId = prev.length ? Math.max(...prev) + 1 : 0;
-                            const newArr = [...prev, nextId];
-                            if (!tabRefs.current[nextId]) tabRefs.current[nextId] = createRef<R2TabHandle>();
-                            setActiveTab(nextId);
-                            return newArr;
-                        });
-                    }}
-                        style={{ marginLeft: 'auto', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1c1c1c', color: '#fff', border: '1px solid #333' }}>+
+                    <button
+                        onClick={() => {
+                            setTabs((prev) => {
+                                const nextId = prev.length
+                                    ? Math.max(...prev) + 1
+                                    : 0;
+                                const newArr = [...prev, nextId];
+                                if (!tabRefs.current[nextId])
+                                    tabRefs.current[nextId] =
+                                        createRef<R2TabHandle>();
+                                setActiveTab(nextId);
+                                return newArr;
+                            });
+                        }}
+                        style={{
+                            marginLeft: "auto",
+                            padding: "6px 10px",
+                            borderRadius: "6px",
+                            backgroundColor: "#1c1c1c",
+                            color: "#fff",
+                            border: "1px solid #333",
+                        }}
+                    >
+                        +
                     </button>
                 </div>
-                <div className="app-root" style={{ position: 'relative', display: 'flex', flex: 1 }}>
+                <div
+                    className="app-root"
+                    style={{ position: "relative", display: "flex", flex: 1 }}
+                >
                     <div
                         style={{
-                            position: 'absolute',
+                            position: "absolute",
                             inset: 0,
                             display: "flex",
                             width: "100%",
@@ -569,7 +697,12 @@ export default function Radare2Terminal() {
                     >
                         {sidebarOpen && (
                             <div
-                                style={{ padding: "10px", overflowY: "auto", overflowX: "hidden", color: "#ffffff" }}
+                                style={{
+                                    padding: "10px",
+                                    overflowY: "auto",
+                                    overflowX: "hidden",
+                                    color: "#ffffff",
+                                }}
                             >
                                 <div
                                     style={{
@@ -578,6 +711,17 @@ export default function Radare2Terminal() {
                                         alignItems: "center",
                                     }}
                                 >
+                                    <button
+                                        onClick={handleNavigateHome}
+                                        className="icon-btn"
+                                    >
+                                        <HomeIcon
+                                            style={{
+                                                width: "20px",
+                                                height: "20px",
+                                            }}
+                                        />
+                                    </button>
                                     <h3>r2web</h3>
                                     <button
                                         className="icon-btn"
@@ -586,12 +730,20 @@ export default function Radare2Terminal() {
                                         ×
                                     </button>
                                 </div>
-                                <ul style={{ listStyleType: "none", padding: 0 }}>
+                                <ul
+                                    style={{
+                                        listStyleType: "none",
+                                        padding: 0,
+                                    }}
+                                >
                                     <li style={{ marginBottom: "8px" }}>
                                         <button
                                             onClick={() => {
-                                                const ref = tabRefs.current[activeTab]?.current;
-                                                if (ref && file) ref.restartSession?.();
+                                                const ref =
+                                                    tabRefs.current[activeTab]
+                                                        ?.current;
+                                                if (ref && file)
+                                                    ref.restartSession?.();
                                             }}
                                             disabled={!isFileSelected || !pkg}
                                             style={{
@@ -609,13 +761,25 @@ export default function Radare2Terminal() {
                                         <button
                                             onClick={() => {
                                                 if (!isFileSelected) return;
-                                                const writer = getActiveWriter();
-                                                const encoder = new TextEncoder();
+                                                const writer =
+                                                    getActiveWriter();
+                                                const encoder =
+                                                    new TextEncoder();
                                                 if (writer) {
-                                                    writer?.write(encoder.encode('?e "\\ec"'));
-                                                    writer?.write(encoder.encode("\r"));
-                                                    writer?.write(encoder.encode("pd"));
-                                                    writer?.write(encoder.encode("\r"));
+                                                    writer?.write(
+                                                        encoder.encode(
+                                                            '?e "\\ec"',
+                                                        ),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("\r"),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("pd"),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("\r"),
+                                                    );
                                                 }
                                             }}
                                             disabled={!isFileSelected}
@@ -634,13 +798,25 @@ export default function Radare2Terminal() {
                                         <button
                                             onClick={() => {
                                                 if (!isFileSelected) return;
-                                                const writer = getActiveWriter();
-                                                const encoder = new TextEncoder();
+                                                const writer =
+                                                    getActiveWriter();
+                                                const encoder =
+                                                    new TextEncoder();
                                                 if (writer) {
-                                                    writer?.write(encoder.encode('?e "\\ec"'));
-                                                    writer?.write(encoder.encode("\r"));
-                                                    writer?.write(encoder.encode("pdc"));
-                                                    writer?.write(encoder.encode("\r"));
+                                                    writer?.write(
+                                                        encoder.encode(
+                                                            '?e "\\ec"',
+                                                        ),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("\r"),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("pdc"),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("\r"),
+                                                    );
                                                 }
                                             }}
                                             disabled={!isFileSelected}
@@ -660,13 +836,25 @@ export default function Radare2Terminal() {
                                         <button
                                             onClick={() => {
                                                 if (!isFileSelected) return;
-                                                const writer = getActiveWriter();
-                                                const encoder = new TextEncoder();
+                                                const writer =
+                                                    getActiveWriter();
+                                                const encoder =
+                                                    new TextEncoder();
                                                 if (writer) {
-                                                    writer?.write(encoder.encode('?e "\\ec"'));
-                                                    writer?.write(encoder.encode("\r"));
-                                                    writer?.write(encoder.encode("px"));
-                                                    writer?.write(encoder.encode("\r"));
+                                                    writer?.write(
+                                                        encoder.encode(
+                                                            '?e "\\ec"',
+                                                        ),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("\r"),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("px"),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("\r"),
+                                                    );
                                                 }
                                             }}
                                             disabled={!isFileSelected}
@@ -686,13 +874,25 @@ export default function Radare2Terminal() {
                                         <button
                                             onClick={() => {
                                                 if (!isFileSelected) return;
-                                                const writer = getActiveWriter();
-                                                const encoder = new TextEncoder();
+                                                const writer =
+                                                    getActiveWriter();
+                                                const encoder =
+                                                    new TextEncoder();
                                                 if (writer) {
-                                                    writer?.write(encoder.encode('?e "\\ec"'));
-                                                    writer?.write(encoder.encode("\r"));
-                                                    writer?.write(encoder.encode("iz"));
-                                                    writer?.write(encoder.encode("\r"));
+                                                    writer?.write(
+                                                        encoder.encode(
+                                                            '?e "\\ec"',
+                                                        ),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("\r"),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("iz"),
+                                                    );
+                                                    writer?.write(
+                                                        encoder.encode("\r"),
+                                                    );
                                                 }
                                             }}
                                             disabled={!isFileSelected}
@@ -712,7 +912,9 @@ export default function Radare2Terminal() {
                                         <input
                                             type="text"
                                             value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            onChange={(e) =>
+                                                setSearchTerm(e.target.value)
+                                            }
                                             placeholder="Search..."
                                             style={{
                                                 padding: "5px",
@@ -729,23 +931,45 @@ export default function Radare2Terminal() {
                                                 marginTop: "5px",
                                             }}
                                         >
-                                            <label style={{ display: "flex", alignItems: "center" }}>
+                                            <label
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                }}
+                                            >
                                                 <input
                                                     type="checkbox"
-                                                    checked={searchCaseSensitive}
-                                                    onChange={() =>
-                                                        setSearchCaseSensitive(!searchCaseSensitive)
+                                                    checked={
+                                                        searchCaseSensitive
                                                     }
-                                                    style={{ marginRight: "5px" }}
+                                                    onChange={() =>
+                                                        setSearchCaseSensitive(
+                                                            !searchCaseSensitive,
+                                                        )
+                                                    }
+                                                    style={{
+                                                        marginRight: "5px",
+                                                    }}
                                                 />
                                                 Case Sensitive
                                             </label>
-                                            <label style={{ display: "flex", alignItems: "center" }}>
+                                            <label
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                }}
+                                            >
                                                 <input
                                                     type="checkbox"
                                                     checked={searchRegex}
-                                                    onChange={() => setSearchRegex(!searchRegex)}
-                                                    style={{ marginRight: "5px" }}
+                                                    onChange={() =>
+                                                        setSearchRegex(
+                                                            !searchRegex,
+                                                        )
+                                                    }
+                                                    style={{
+                                                        marginRight: "5px",
+                                                    }}
                                                 />
                                                 Regex
                                             </label>
@@ -786,117 +1010,244 @@ export default function Radare2Terminal() {
                                             <div
                                                 style={{
                                                     display: "flex",
-                                                    justifyContent: "space-between",
+                                                    justifyContent:
+                                                        "space-between",
                                                     alignItems: "center",
                                                 }}
                                             >
                                                 <span>Cached Versions:</span>
                                                 <button
-                                                    onClick={() => setShowCachedVersions(!showCachedVersions)}
+                                                    onClick={() =>
+                                                        setShowCachedVersions(
+                                                            !showCachedVersions,
+                                                        )
+                                                    }
                                                     style={{
                                                         padding: "5px",
-                                                        backgroundColor: "#2d2d2d",
+                                                        backgroundColor:
+                                                            "#2d2d2d",
                                                         color: "#ffffff",
                                                     }}
                                                 >
-                                                    {showCachedVersions ? "Hide" : "Show"}
+                                                    {showCachedVersions
+                                                        ? "Hide"
+                                                        : "Show"}
                                                 </button>
                                             </div>
                                             {showCachedVersions && (
-                                                <ul style={{ listStyleType: "none", padding: 0 }}>
-                                                    {cachedVersions.map((version, index) => (
-                                                        <li
-                                                            key={index}
-                                                            style={{
-                                                                marginTop: "5px",
-                                                                display: "flex",
-                                                                justifyContent: "space-between",
-                                                            }}
-                                                        >
-                                                            <button
+                                                <ul
+                                                    style={{
+                                                        listStyleType: "none",
+                                                        padding: 0,
+                                                    }}
+                                                >
+                                                    {cachedVersions.map(
+                                                        (version, index) => (
+                                                            <li
+                                                                key={index}
                                                                 style={{
-                                                                    padding: "5px",
-                                                                    backgroundColor: "#2d2d2d",
-                                                                    color: "#ffffff",
-                                                                    width: "calc(100% - 30px)",
-                                                                    textAlign: "center",
+                                                                    marginTop:
+                                                                        "5px",
+                                                                    display:
+                                                                        "flex",
+                                                                    justifyContent:
+                                                                        "space-between",
                                                                 }}
                                                             >
-                                                                {version}
-                                                            </button>
-                                                            <button
-                                                                onClick={async () => {
-                                                                    const cache = await caches.open("wasm-cache");
-                                                                    await cache.delete(`/${version}`);
-                                                                    fetchCachedVersions();
-                                                                }}
-                                                                className="danger" style={{ padding: "5px", display: "flex", justifyContent: "center", alignItems: "center", marginLeft: "5px" }}
-                                                            >
-                                                                X
-                                                            </button>
-                                                        </li>
-                                                    ))}
+                                                                <button
+                                                                    style={{
+                                                                        padding:
+                                                                            "5px",
+                                                                        backgroundColor:
+                                                                            "#2d2d2d",
+                                                                        color: "#ffffff",
+                                                                        width: "calc(100% - 30px)",
+                                                                        textAlign:
+                                                                            "center",
+                                                                    }}
+                                                                >
+                                                                    {version}
+                                                                </button>
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        const cache =
+                                                                            await caches.open(
+                                                                                "wasm-cache",
+                                                                            );
+                                                                        await cache.delete(
+                                                                            `/${version}`,
+                                                                        );
+                                                                        fetchCachedVersions();
+                                                                    }}
+                                                                    className="danger"
+                                                                    style={{
+                                                                        padding:
+                                                                            "5px",
+                                                                        display:
+                                                                            "flex",
+                                                                        justifyContent:
+                                                                            "center",
+                                                                        alignItems:
+                                                                            "center",
+                                                                        marginLeft:
+                                                                            "5px",
+                                                                    }}
+                                                                >
+                                                                    X
+                                                                </button>
+                                                            </li>
+                                                        ),
+                                                    )}
                                                 </ul>
                                             )}
                                         </li>
                                     )}
-                                    {currentVersion >= "6.0.3" && (<li>
-                                        <button
-                                            onClick={async () => {
-                                                if (!isFileSelected) return;
-                                                const writer = getActiveWriter();
-                                                const encoder = new TextEncoder();
-                                                if (writer) {
-                                                    writer?.write(encoder.encode('?e "\\ec"'));
-                                                    writer?.write(encoder.encode("\r"));
-                                                    writer?.write(encoder.encode(`wcf mydir/${file.name.split(".").slice(0, -1).join(".")}_m.${file.name.split(".").pop()}`));
-                                                    writer?.write(encoder.encode("\r"));
-                                                    writer?.write(encoder.encode('?e "\\ec"'));
-                                                    writer?.write(encoder.encode("\r"));
-                                                    writer?.write(encoder.encode("?e [I] Saving file..."));
-                                                    writer?.write(encoder.encode("\r"));
-                                                    // saving takes a lil bit of time so we wait for it to finish
-                                                    await new Promise((resolve) => setTimeout(resolve, 1000));
-                                                    const ref = tabRefs.current[activeTab]?.current;
-                                                    const dir = ref?.getDir();
+                                    {currentVersion >= "6.0.3" && (
+                                        <li>
+                                            <button
+                                                onClick={async () => {
+                                                    if (!isFileSelected) return;
+                                                    const writer =
+                                                        getActiveWriter();
+                                                    const encoder =
+                                                        new TextEncoder();
+                                                    if (writer) {
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                '?e "\\ec"',
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                "\r",
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                `wcf mydir/${file.name.split(".").slice(0, -1).join(".")}_m.${file.name.split(".").pop()}`,
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                "\r",
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                '?e "\\ec"',
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                "\r",
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                "?e [I] Saving file...",
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                "\r",
+                                                            ),
+                                                        );
+                                                        // saving takes a lil bit of time so we wait for it to finish
+                                                        await new Promise(
+                                                            (resolve) =>
+                                                                setTimeout(
+                                                                    resolve,
+                                                                    1000,
+                                                                ),
+                                                        );
+                                                        const ref =
+                                                            tabRefs.current[
+                                                                activeTab
+                                                            ]?.current;
+                                                        const dir =
+                                                            ref?.getDir();
 
-                                                    if (dir) {
-                                                        // const entries = await dir.readDir(".");
-                                                        // console.log(entries);
-                                                        const bytes = await dir.readFile(`/${file.name.split(".").slice(0, -1).join(".")}_m.${file.name.split(".").pop()}`);
-                                                        console.log(bytes);
-                                                        const blob = new Blob([bytes], { type: "application/octet-stream" });
-                                                        const url = URL.createObjectURL(blob);
-                                                        const a = document.createElement("a");
-                                                        a.href = url;
-                                                        a.download = `${file.name.split(".").slice(0, -1).join(".")}_m.${file.name.split(".").pop()}`;
-                                                        a.click();
-                                                        URL.revokeObjectURL(url);
-                                                        writer?.write(encoder.encode('?e "\\ec"'));
-                                                        writer?.write(encoder.encode("\r"));
-                                                        writer?.write(encoder.encode("?e [S] File saved successfully!"));
-                                                        writer?.write(encoder.encode("\r"));
+                                                        if (dir) {
+                                                            // const entries = await dir.readDir(".");
+                                                            // console.log(entries);
+                                                            const bytes =
+                                                                await dir.readFile(
+                                                                    `/${file.name.split(".").slice(0, -1).join(".")}_m.${file.name.split(".").pop()}`,
+                                                                );
+                                                            console.log(bytes);
+                                                            const blob =
+                                                                new Blob(
+                                                                    [bytes],
+                                                                    {
+                                                                        type: "application/octet-stream",
+                                                                    },
+                                                                );
+                                                            const url =
+                                                                URL.createObjectURL(
+                                                                    blob,
+                                                                );
+                                                            const a =
+                                                                document.createElement(
+                                                                    "a",
+                                                                );
+                                                            a.href = url;
+                                                            a.download = `${file.name.split(".").slice(0, -1).join(".")}_m.${file.name.split(".").pop()}`;
+                                                            a.click();
+                                                            URL.revokeObjectURL(
+                                                                url,
+                                                            );
+                                                            writer?.write(
+                                                                encoder.encode(
+                                                                    '?e "\\ec"',
+                                                                ),
+                                                            );
+                                                            writer?.write(
+                                                                encoder.encode(
+                                                                    "\r",
+                                                                ),
+                                                            );
+                                                            writer?.write(
+                                                                encoder.encode(
+                                                                    "?e [S] File saved successfully!",
+                                                                ),
+                                                            );
+                                                            writer?.write(
+                                                                encoder.encode(
+                                                                    "\r",
+                                                                ),
+                                                            );
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                            disabled={!isFileSelected}
-                                            style={{
-                                                padding: "5px 5px 5px 5px",
-                                                backgroundColor: "#2d2d2d",
-                                                color: "#ffffff",
-                                                marginTop: "10px",
-                                                width: "100%",
-                                                textAlign: "center",
-                                            }}
-                                        >
-                                            Save File
-                                        </button>
-                                    </li>)}
+                                                }}
+                                                disabled={!isFileSelected}
+                                                style={{
+                                                    padding: "5px 5px 5px 5px",
+                                                    backgroundColor: "#2d2d2d",
+                                                    color: "#ffffff",
+                                                    marginTop: "10px",
+                                                    width: "100%",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                Save File
+                                            </button>
+                                        </li>
+                                    )}
                                 </ul>
-                                <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        marginTop: "10px",
+                                    }}
+                                >
                                     <button
                                         type="button"
-                                        onClick={() => document.getElementById("file-upload")?.click()}
+                                        onClick={() =>
+                                            document
+                                                .getElementById("file-upload")
+                                                ?.click()
+                                        }
                                         style={{
                                             padding: "5px 5px 5px 5px",
                                             backgroundColor: "#2d2d2d",
@@ -915,18 +1266,30 @@ export default function Radare2Terminal() {
                                         type="file"
                                         multiple
                                         onChange={(event) => {
-                                            const ref = tabRefs.current[activeTab]?.current;
+                                            const ref =
+                                                tabRefs.current[activeTab]
+                                                    ?.current;
                                             if (ref) {
                                                 if (event.target.files) {
-                                                    ref.uploadFiles(event.target.files);
+                                                    ref.uploadFiles(
+                                                        event.target.files,
+                                                    );
                                                 }
                                             }
                                         }}
                                         style={{ display: "none" }}
                                     />
                                 </div>
-                                <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                                    <button onClick={() => setShowShortcuts(true)} className="ghost">
+                                <div
+                                    style={{
+                                        marginTop: "20px",
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    <button
+                                        onClick={() => setShowShortcuts(true)}
+                                        className="ghost"
+                                    >
                                         Shortcuts
                                     </button>
                                 </div>
@@ -935,14 +1298,28 @@ export default function Radare2Terminal() {
                         {!sidebarOpen && (
                             <button
                                 onClick={() => setSidebarOpen(true)}
-                                className="icon-btn" style={{ position: "fixed", left: "10px", top: "10px", zIndex: 1000 }}
+                                className="icon-btn"
+                                style={{
+                                    position: "fixed",
+                                    left: "10px",
+                                    top: "10px",
+                                    zIndex: 1000,
+                                }}
                             >
                                 ☰
                             </button>
                         )}
-                        <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                        <div
+                            style={{
+                                flex: 1,
+                                minHeight: 0,
+                                position: "relative",
+                            }}
+                        >
                             {tabs.map((id) => {
-                                if (!tabRefs.current[id]) tabRefs.current[id] = createRef<R2TabHandle>();
+                                if (!tabRefs.current[id])
+                                    tabRefs.current[id] =
+                                        createRef<R2TabHandle>();
                                 return (
                                     <R2Tab
                                         key={id}
@@ -954,7 +1331,9 @@ export default function Radare2Terminal() {
                                 );
                             })}
                             {tabs.length === 0 && (
-                                <div style={{ color: '#ccc', padding: '1rem' }}>No tabs open</div>
+                                <div style={{ color: "#ccc", padding: "1rem" }}>
+                                    No tabs open
+                                </div>
                             )}
                         </div>
                     </div>
