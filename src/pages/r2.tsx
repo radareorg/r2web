@@ -5,6 +5,7 @@ import "xterm/css/xterm.css";
 import { type Wasmer } from "@wasmer/sdk";
 import { R2Tab, type R2TabHandle } from "../r2tab";
 import { useNavigate } from "react-router-dom";
+import { StringsView } from "../views/StringsView";
 
 const HomeIcon = ({ style }: { style?: React.CSSProperties }) => (
     <svg
@@ -37,6 +38,8 @@ export default function Radare2Terminal() {
     const [showCachedVersions, setShowCachedVersions] = useState(false);
     const [currentVersion, setCurrentVersion] = useState<string>("");
     const [showShortcuts, setShowShortcuts] = useState(false);
+    const [showStringsView, setShowStringsView] = useState(false);
+    const [stringsData, setStringsData] = useState<any[]>([]);
     const navigate = useNavigate();
 
     // Tabs state
@@ -185,6 +188,36 @@ export default function Radare2Terminal() {
         });
     };
 
+    const handleShowStrings = async () => {
+        if (!isFileSelected) return;
+        const writer = getActiveWriter();
+        const encoder = new TextEncoder();
+        const ref = tabRefs.current[activeTab]?.current;
+        const dir = ref?.getDir();
+
+        if (writer && dir) {
+            writer.write(encoder.encode('?e "\\ec"'));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode("?e [I] Loading..."));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode("izj >> mydir/strings.txt"));
+            writer.write(encoder.encode("\r"));
+
+            setTimeout(async () => {
+                try {
+                    const bytes = await dir.readFile("/strings.txt");
+                    const jsonString = new TextDecoder().decode(bytes);
+                    const parsedStrings = JSON.parse(jsonString);
+                    setStringsData(parsedStrings);
+                    await dir.removeFile("/strings.txt");
+                    setShowStringsView(true);
+                } catch (error) {
+                    console.error("Error reading strings file:", error);
+                }
+            }, 1000);
+        }
+    };
+
     const handleNavigateHome = async () => {
         tabs.forEach((id) => {
             const ref = tabRefs.current[id]?.current;
@@ -229,6 +262,16 @@ export default function Radare2Terminal() {
                     target.isContentEditable)
             )
                 return;
+            if (e.key === "Escape") {
+                if (showStringsView) {
+                    setShowStringsView(false);
+                    return;
+                }
+                if (showShortcuts) {
+                    setShowShortcuts(false);
+                    return;
+                }
+            }
             if (e.altKey) {
                 if (e.code.startsWith("Digit")) {
                     const num = parseInt(e.code.replace("Digit", ""), 10);
@@ -255,7 +298,7 @@ export default function Radare2Terminal() {
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [tabs, activeTab]);
+    }, [tabs, activeTab, showStringsView, showShortcuts]);
 
     useEffect(() => {
         if (window.innerWidth < 768) {
@@ -872,29 +915,7 @@ export default function Radare2Terminal() {
                                     </li>
                                     <li>
                                         <button
-                                            onClick={() => {
-                                                if (!isFileSelected) return;
-                                                const writer =
-                                                    getActiveWriter();
-                                                const encoder =
-                                                    new TextEncoder();
-                                                if (writer) {
-                                                    writer?.write(
-                                                        encoder.encode(
-                                                            '?e "\\ec"',
-                                                        ),
-                                                    );
-                                                    writer?.write(
-                                                        encoder.encode("\r"),
-                                                    );
-                                                    writer?.write(
-                                                        encoder.encode("iz"),
-                                                    );
-                                                    writer?.write(
-                                                        encoder.encode("\r"),
-                                                    );
-                                                }
-                                            }}
+                                            onClick={handleShowStrings}
                                             disabled={!isFileSelected}
                                             style={{
                                                 padding: "5px 5px 5px 5px",
@@ -1339,6 +1360,13 @@ export default function Radare2Terminal() {
                     </div>
                 </div>
             </div>
+
+            {showStringsView && (
+                <StringsView
+                    strings={stringsData}
+                    onClose={() => setShowStringsView(false)}
+                />
+            )}
         </>
     );
 }
