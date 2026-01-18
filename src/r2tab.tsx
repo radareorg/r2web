@@ -7,6 +7,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { fileStore } from "./store/FileStore";
 import "xterm/css/xterm.css";
 import { Directory, type Instance, type Wasmer } from "@wasmer/sdk";
+import { InputView } from "./views/InputView";
 
 type R2TabHandle = {
     focus: () => void;
@@ -32,6 +33,8 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
     const [dir, setDir] = useState<Directory | null>(null);
     const onDataDisposableRef = useRef<any>(null);
     const [instance, setInstance] = useState<Instance | null>(null);
+    const [showSearch, setShowSearch] = useState(false);
+    const [showSeekAddress, setShowSeekAddress] = useState(false);
 
     const restartSession = async () => {
         if (!pkg || !termInstance) return;
@@ -192,21 +195,13 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
 
             // Ctrl+F
             if (data === "\x06" || data === "F") {
-                const searchTerm = prompt("Enter search term:");
-                if (searchTerm) {
-                    stdin?.write(encoder.encode(`/ ${searchTerm}`));
-                    stdin?.write(encoder.encode("\r"));
-                }
+                setShowSearch(true);
                 return;
             }
 
             // CTRL+G
             if (data === "\x07" || data === "G") {
-                const address = prompt("Enter address:");
-                if (address) {
-                    stdin?.write(encoder.encode(`s ${address}`));
-                    stdin?.write(encoder.encode("\r"));
-                }
+                setShowSeekAddress(true);
                 return;
             }
 
@@ -358,21 +353,51 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
     }, [active, fitAddon, termInstance]);
 
     return (
-        <div style={{
-            display: active ? "block" : "none",
-            height: "100%",
-            width: "100%",
-            position: "absolute",
-            inset: 0,
-            overflow: "hidden"
-        }}>
-            <div ref={terminalRef} style={{
+        <>
+            <div style={{
+                display: active ? "block" : "none",
                 height: "100%",
                 width: "100%",
                 position: "absolute",
-                inset: 0
-            }} />
-        </div>
+                inset: 0,
+                overflow: "hidden"
+            }}>
+                <div ref={terminalRef} style={{
+                    height: "100%",
+                    width: "100%",
+                    position: "absolute",
+                    inset: 0
+                }} />
+            </div>
+            <InputView
+                isOpen={showSearch}
+                title="Search"
+                placeholder="Enter search term..."
+                onClose={() => setShowSearch(false)}
+                onSubmit={(value) => {
+                    const writer = r2Writer;
+                    if (writer) {
+                        const encoder = new TextEncoder();
+                        writer.write(encoder.encode(`/ ${value}`));
+                        writer.write(encoder.encode("\r"));
+                    }
+                }}
+            />
+            <InputView
+                isOpen={showSeekAddress}
+                title="Go to Address"
+                placeholder="Enter address (e.g., 0x1000)..."
+                onClose={() => setShowSeekAddress(false)}
+                onSubmit={(value) => {
+                    const writer = r2Writer;
+                    if (writer) {
+                        const encoder = new TextEncoder();
+                        writer.write(encoder.encode(`s ${value}`));
+                        writer.write(encoder.encode("\r"));
+                    }
+                }}
+            />
+        </>
     );
 });
 
