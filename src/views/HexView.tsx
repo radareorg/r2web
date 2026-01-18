@@ -21,7 +21,6 @@ export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageInput, setPageInput] = useState("");
     const [showToast, setShowToast] = useState(false);
-    const [scrollToAddress, setScrollToAddress] = useState("");
 
     useEffect(() => {
         setPageInput(currentPage.toString());
@@ -73,24 +72,6 @@ export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
         setTimeout(() => setShowToast(false), 2000);
     };
 
-    const handleAddressJump = () => {
-        const targetAddress = scrollToAddress.toLowerCase();
-        const matchingIndex = hexData.findIndex(
-            (line) => line.offset.toLowerCase() === targetAddress
-        );
-
-        if (matchingIndex !== -1) {
-            const targetPage = Math.ceil((matchingIndex + 1) / ROWS_PER_PAGE);
-            setCurrentPage(targetPage);
-        }
-    };
-
-    const handleAddressJumpKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
-            handleAddressJump();
-        }
-    };
-
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === "Escape") {
             onClose();
@@ -105,12 +86,6 @@ export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm]);
-
-    const getAsciiColor = (char: string) => {
-        const code = char.charCodeAt(0);
-        if (code < 32 || code === 127) return "#666666";
-        return "#e8e8e8";
-    };
 
     const highlightByte = (byte: string) => {
         if (!searchTerm) return false;
@@ -139,7 +114,7 @@ export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
                     backgroundColor: "#1e1e1e",
                     borderRadius: "12px",
                     width: "95vw",
-                    maxWidth: "1600px",
+                    maxWidth: "830px",
                     maxHeight: "90vh",
                     display: "flex",
                     flexDirection: "column",
@@ -238,22 +213,6 @@ export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
                             minWidth: "200px",
                         }}
                     />
-                    <input
-                        type="text"
-                        placeholder="Jump to address (e.g., 0x1234)"
-                        value={scrollToAddress}
-                        onChange={(e) => setScrollToAddress(e.target.value)}
-                        onKeyDown={handleAddressJumpKeyDown}
-                        style={{
-                            padding: "8px 12px",
-                            backgroundColor: "#2d2d2d",
-                            color: "#fff",
-                            border: "1px solid #3d3d3d",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                            width: "200px",
-                        }}
-                    />
                 </div>
 
                 <div
@@ -283,6 +242,7 @@ export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
                             <tr>
                                 <th
                                     style={{
+                                        width: "100px",
                                         padding: "12px 8px",
                                         textAlign: "left",
                                         borderBottom: "2px solid #3d3d3d",
@@ -316,7 +276,7 @@ export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
                                 <th
                                     style={{
                                         padding: "12px 8px",
-                                        textAlign: "left",
+                                        textAlign: "center",
                                         borderBottom: "2px solid #3d3d3d",
                                         color: "#888",
                                         fontWeight: "500",
@@ -395,22 +355,13 @@ export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
                                         ))}
                                         <td
                                             style={{
-                                                padding: "10px 8px",
+                                                padding: "4px 6px",
                                                 fontFamily: "monospace",
-                                                color: "#e8e8e8",
-                                                letterSpacing: "1px",
+                                                color: "#2ecc71",
+                                                whiteSpace: "pre",
                                             }}
                                         >
-                                            {line.ascii.split("").map((char, cIdx) => (
-                                                <span
-                                                    key={cIdx}
-                                                    style={{
-                                                        color: getAsciiColor(char),
-                                                    }}
-                                                >
-                                                    {char}
-                                                </span>
-                                            ))}
+                                            {line.ascii}
                                         </td>
                                     </tr>
                                 ))

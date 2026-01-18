@@ -237,30 +237,33 @@ export default function Radare2Terminal() {
             const bytes: string[] = [];
             let ascii = "";
 
-            for (let i = 1; i < parts.length - 1; i++) {
+            for (let i = 1; i < parts.length; i++) {
                 const hexGroup = parts[i];
 
-                for (let j = 0; j < hexGroup.length; j += 2) {
-                    const byte = hexGroup.substring(j, j + 2);
-                    if (byte.length === 2) {
-                        bytes.push(byte);
+                if (/^[0-9a-fA-F]+$/.test(hexGroup) && hexGroup.length >= 2) {
+                    for (let j = 0; j < hexGroup.length; j += 2) {
+                        const byte = hexGroup.substring(j, j + 2);
+                        if (byte.length === 2) {
+                            bytes.push(byte);
+                        }
                     }
+                } else if (/^[ -~]+$/.test(hexGroup)) {
+                    ascii += hexGroup + " ";
                 }
             }
 
-            const lastPart = parts[parts.length - 1];
-            if (lastPart && /^[ -~]*$/.test(lastPart)) {
-                ascii = lastPart;
-            }
+            ascii = ascii.trim();
 
             const offsetNum = parseInt(offset, 16);
 
-            lines.push({
-                offset,
-                offsetNum,
-                bytes,
-                ascii,
-            });
+            if (bytes.length === 16) {
+                lines.push({
+                    offset,
+                    offsetNum,
+                    bytes,
+                    ascii,
+                });
+            }
         }
 
         return lines;
