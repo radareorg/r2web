@@ -991,7 +991,31 @@ export default function Radare2Terminal() {
                                     </li>
                                     <li>
                                         <button
-                                            onClick={handleShowHexdump}
+                                            onClick={() => {
+                                                if (currentVersion >= "6.0.9") {
+                                                    handleShowHexdump();
+                                                } else {
+                                                    if (!isFileSelected) return;
+                                                    const writer = getActiveWriter();
+                                                    const encoder = new TextEncoder();
+                                                    if (writer) {
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                '?e "\\ec"',
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode("\r"),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode("px"),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode("\r"),
+                                                        );
+                                                    }
+                                                }
+                                            }}
                                             disabled={!isFileSelected}
                                             style={{
                                                 padding: "5px 5px 5px 5px",
@@ -1007,7 +1031,31 @@ export default function Radare2Terminal() {
                                     </li>
                                     <li>
                                         <button
-                                            onClick={handleShowStrings}
+                                            onClick={() => {
+                                                if (currentVersion >= "6.0.9") {
+                                                    handleShowStrings();
+                                                } else {
+                                                    if (!isFileSelected) return;
+                                                    const writer = getActiveWriter();
+                                                    const encoder = new TextEncoder();
+                                                    if (writer) {
+                                                        writer?.write(
+                                                            encoder.encode(
+                                                                '?e "\\ec"',
+                                                            ),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode("\r"),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode("iz"),
+                                                        );
+                                                        writer?.write(
+                                                            encoder.encode("\r"),
+                                                        );
+                                                    }
+                                                }
+                                            }}
                                             disabled={!isFileSelected}
                                             style={{
                                                 padding: "5px 5px 5px 5px",
