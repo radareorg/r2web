@@ -78,7 +78,10 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
             termInstance?.focus();
             fitAddon?.fit();
         },
-        dispose: () => {
+        dispose: async () => {
+            try { await r2Writer?.close(); } catch { }
+            try { instance?.free(); } catch { }
+            try { onDataDisposableRef.current?.dispose(); } catch { }
             try { termInstance?.dispose(); } catch { }
         },
         uploadFiles: async (files: FileList) => {

@@ -31,6 +31,10 @@ export default function Home() {
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    useEffect(() => {
+        fileStore.clear();
+    }, []);
+
     const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.length) {
             setFile(e.target.files[0]);

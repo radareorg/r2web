@@ -6,6 +6,7 @@ import { type Wasmer } from "@wasmer/sdk";
 import { R2Tab, type R2TabHandle } from "../r2tab";
 import { useNavigate } from "react-router-dom";
 import { StringsView } from "../views/StringsView";
+import { HexView, type HexLine } from "../views/HexView";
 
 const HomeIcon = ({ style }: { style?: React.CSSProperties }) => (
     <svg
@@ -40,6 +41,9 @@ export default function Radare2Terminal() {
     const [showShortcuts, setShowShortcuts] = useState(false);
     const [showStringsView, setShowStringsView] = useState(false);
     const [stringsData, setStringsData] = useState<any[]>([]);
+    const [showHexView, setShowHexView] = useState(false);
+    const [hexData, setHexData] = useState<HexLine[]>([]);
+    const [currentAddress, setCurrentAddress] = useState<string>("");
     const navigate = useNavigate();
 
     // Tabs state
@@ -218,9 +222,86 @@ export default function Radare2Terminal() {
         }
     };
 
+    const parseHexdump = (output: string): HexLine[] => {
+        const lines: HexLine[] = [];
+        const linesArray = output.split("\n").filter((line) => line.trim());
+
+        for (const line of linesArray) {
+            if (!line.startsWith("0x")) {
+                continue;
+            }
+
+            const parts = line.trim().split(/\s+/);
+            if (parts.length < 3) continue;
+
+            const offset = parts[0];
+            const bytes: string[] = [];
+            let ascii = "";
+
+            for (let i = 1; i < parts.length - 1; i++) {
+                const hexGroup = parts[i];
+
+                for (let j = 0; j < hexGroup.length; j += 2) {
+                    const byte = hexGroup.substring(j, j + 2);
+                    if (byte.length === 2) {
+                        bytes.push(byte);
+                    }
+                }
+            }
+
+            const lastPart = parts[parts.length - 1];
+            if (lastPart && /^[ -~]*$/.test(lastPart)) {
+                ascii = lastPart;
+            }
+
+            const offsetNum = parseInt(offset, 16);
+
+            lines.push({
+                offset,
+                offsetNum,
+                bytes,
+                ascii,
+            });
+        }
+
+        return lines;
+    };
+
+    const handleShowHexdump = async () => {
+        if (!isFileSelected) return;
+        const writer = getActiveWriter();
+        const encoder = new TextEncoder();
+        const ref = tabRefs.current[activeTab]?.current;
+        const dir = ref?.getDir();
+
+        if (writer && dir) {
+            writer.write(encoder.encode('?e "\\ec"'));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode("?e [I] Loading..."));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode("px >> mydir/hexdump.txt"));
+            writer.write(encoder.encode("\r"));
+
+            setTimeout(async () => {
+                try {
+                    const bytes = await dir.readFile("/hexdump.txt");
+                    const output = new TextDecoder().decode(bytes);
+                    const parsedHex = parseHexdump(output);
+                    setHexData(parsedHex);
+                    await dir.removeFile("/hexdump.txt");
+                    setShowHexView(true);
+                } catch (error) {
+                    console.error("Error reading hexdump file:", error);
+                }
+            }, 1000);
+        }
+    };
+
     const handleNavigateHome = async () => {
-        tabs.forEach((id) => {
+        tabs.forEach(async (id) => {
             const ref = tabRefs.current[id]?.current;
+            const writer = ref?.getWriter();
+            await writer?.close();
             ref?.dispose();
         });
 
@@ -228,7 +309,12 @@ export default function Radare2Terminal() {
             setPkg(null);
         }
 
-        fileStore.clear();
+        setStringsData([]);
+        setHexData([]);
+        setTabs([0]);
+        setActiveTab(0);
+
+        tabRefs.current = {};
 
         navigate("/");
     };
@@ -263,6 +349,10 @@ export default function Radare2Terminal() {
             )
                 return;
             if (e.key === "Escape") {
+                if (showHexView) {
+                    setShowHexView(false);
+                    return;
+                }
                 if (showStringsView) {
                     setShowStringsView(false);
                     return;
@@ -298,7 +388,7 @@ export default function Radare2Terminal() {
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [tabs, activeTab, showStringsView, showShortcuts]);
+    }, [tabs, activeTab, showHexView, showStringsView, showShortcuts]);
 
     useEffect(() => {
         if (window.innerWidth < 768) {
@@ -877,29 +967,7 @@ export default function Radare2Terminal() {
                                     </li>
                                     <li>
                                         <button
-                                            onClick={() => {
-                                                if (!isFileSelected) return;
-                                                const writer =
-                                                    getActiveWriter();
-                                                const encoder =
-                                                    new TextEncoder();
-                                                if (writer) {
-                                                    writer?.write(
-                                                        encoder.encode(
-                                                            '?e "\\ec"',
-                                                        ),
-                                                    );
-                                                    writer?.write(
-                                                        encoder.encode("\r"),
-                                                    );
-                                                    writer?.write(
-                                                        encoder.encode("px"),
-                                                    );
-                                                    writer?.write(
-                                                        encoder.encode("\r"),
-                                                    );
-                                                }
-                                            }}
+                                            onClick={handleShowHexdump}
                                             disabled={!isFileSelected}
                                             style={{
                                                 padding: "5px 5px 5px 5px",
@@ -1365,6 +1433,12 @@ export default function Radare2Terminal() {
                 <StringsView
                     strings={stringsData}
                     onClose={() => setShowStringsView(false)}
+                />
+            )}
+            {showHexView && (
+                <HexView
+                    hexData={hexData}
+                    onClose={() => setShowHexView(false)}
                 />
             )}
         </>
