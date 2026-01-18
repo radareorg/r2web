@@ -338,7 +338,9 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
 
         return () => {
             try {
-                r2Writer?.close?.();
+                if (r2Writer) {
+                    r2Writer.close();
+                }
             } catch (_) { }
             try {
                 instance?.free();

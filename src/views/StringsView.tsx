@@ -15,11 +15,12 @@ type StringInfo = {
 type StringsViewProps = {
     strings: StringInfo[];
     onClose: () => void;
+    onSeekAddress?: (address: string) => void;
 };
 
 const ITEMS_PER_PAGE = 100;
 
-export function StringsView({ strings, onClose }: StringsViewProps) {
+export function StringsView({ strings, onClose, onSeekAddress }: StringsViewProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [filterSection, setFilterSection] = useState<string>("all");
@@ -159,9 +160,9 @@ export function StringsView({ strings, onClose }: StringsViewProps) {
         setTimeout(() => setShowToast(false), 2000);
     };
 
-    const handleTouchStart = (text: string) => {
+    const handleTouchStart = (onAction: () => void) => {
         longPressTimerRef.current = setTimeout(() => {
-            handleCopy(text);
+            onAction();
         }, 500);
     };
 
@@ -438,7 +439,7 @@ export function StringsView({ strings, onClose }: StringsViewProps) {
                                                 "transparent";
                                         }}
                                         onDoubleClick={() => handleCopy(item.string)}
-                                        onTouchStart={() => handleTouchStart(item.string)}
+                                        onTouchStart={() => handleTouchStart(() => handleCopy(item.string))}
                                         onTouchEnd={handleTouchEnd}
                                         onTouchMove={handleTouchMove}
                                     >
@@ -457,6 +458,12 @@ export function StringsView({ strings, onClose }: StringsViewProps) {
                                                 fontFamily: "monospace",
                                                 color: "#f39c12",
                                                 whiteSpace: "nowrap",
+                                                cursor: onSeekAddress ? "pointer" : "default",
+                                            }}
+                                            onClick={() => {
+                                                if (onSeekAddress) {
+                                                    onSeekAddress(formatAddress(item.vaddr));
+                                                }
                                             }}
                                         >
                                             {formatAddress(item.vaddr)}
@@ -467,6 +474,12 @@ export function StringsView({ strings, onClose }: StringsViewProps) {
                                                 fontFamily: "monospace",
                                                 color: "#e67e22",
                                                 whiteSpace: "nowrap",
+                                                cursor: onSeekAddress ? "pointer" : "default",
+                                            }}
+                                            onClick={() => {
+                                                if (onSeekAddress) {
+                                                    onSeekAddress(formatAddress(item.paddr));
+                                                }
                                             }}
                                         >
                                             {formatAddress(item.paddr)}
@@ -627,9 +640,14 @@ export function StringsView({ strings, onClose }: StringsViewProps) {
                         alignItems: "center",
                         fontSize: "12px",
                         color: "#666",
+                        flexWrap: "wrap",
+                        gap: "8px",
                     }}
                 >
-                    <span>Double-click or long-press to copy</span>
+                    <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+                        <span>Double-click or long-press to copy string</span>
+                        {onSeekAddress && <span>• Click address to seek</span>}
+                    </div>
                     <span>Press Esc to close</span>
                 </div>
             </div>

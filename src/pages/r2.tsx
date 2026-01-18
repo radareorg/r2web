@@ -43,7 +43,6 @@ export default function Radare2Terminal() {
     const [stringsData, setStringsData] = useState<any[]>([]);
     const [showHexView, setShowHexView] = useState(false);
     const [hexData, setHexData] = useState<HexLine[]>([]);
-    const [currentAddress, setCurrentAddress] = useState<string>("");
     const navigate = useNavigate();
 
     // Tabs state
@@ -204,16 +203,16 @@ export default function Radare2Terminal() {
             writer.write(encoder.encode("\r"));
             writer.write(encoder.encode("?e [I] Loading..."));
             writer.write(encoder.encode("\r"));
-            writer.write(encoder.encode("izj >> mydir/strings.txt"));
+            writer.write(encoder.encode("izj > mydir/.strings"));
             writer.write(encoder.encode("\r"));
 
             setTimeout(async () => {
                 try {
-                    const bytes = await dir.readFile("/strings.txt");
+                    const bytes = await dir.readFile("/.strings");
                     const jsonString = new TextDecoder().decode(bytes);
                     const parsedStrings = JSON.parse(jsonString);
                     setStringsData(parsedStrings);
-                    await dir.removeFile("/strings.txt");
+                    await dir.removeFile("/.strings");
                     setShowStringsView(true);
                 } catch (error) {
                     console.error("Error reading strings file:", error);
@@ -279,16 +278,16 @@ export default function Radare2Terminal() {
             writer.write(encoder.encode("\r"));
             writer.write(encoder.encode("?e [I] Loading..."));
             writer.write(encoder.encode("\r"));
-            writer.write(encoder.encode("px >> mydir/hexdump.txt"));
+            writer.write(encoder.encode("px > mydir/.hexdump"));
             writer.write(encoder.encode("\r"));
 
             setTimeout(async () => {
                 try {
-                    const bytes = await dir.readFile("/hexdump.txt");
+                    const bytes = await dir.readFile("/.hexdump");
                     const output = new TextDecoder().decode(bytes);
                     const parsedHex = parseHexdump(output);
                     setHexData(parsedHex);
-                    await dir.removeFile("/hexdump.txt");
+                    await dir.removeFile("/.hexdump");
                     setShowHexView(true);
                 } catch (error) {
                     console.error("Error reading hexdump file:", error);
@@ -300,8 +299,6 @@ export default function Radare2Terminal() {
     const handleNavigateHome = async () => {
         tabs.forEach(async (id) => {
             const ref = tabRefs.current[id]?.current;
-            const writer = ref?.getWriter();
-            await writer?.close();
             ref?.dispose();
         });
 
@@ -326,6 +323,23 @@ export default function Radare2Terminal() {
         const ref = tabRefs.current[activeTab]?.current;
         return ref?.getWriter();
     }
+
+    const handleSeekAddress = (address: string) => {
+        const writer = getActiveWriter();
+        const encoder = new TextEncoder();
+        if (writer) {
+            if (showHexView) {
+                setShowHexView(false);
+            }
+            if (showStringsView) {
+                setShowStringsView(false);
+            }
+            writer.write(encoder.encode("clear\r"));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode(`s @ ${address}`));
+            writer.write(encoder.encode("\r"));
+        }
+    };
     function getActiveSearchAddon() {
         const ref = tabRefs.current[activeTab]?.current;
         return ref?.getSearchAddon() || null;
@@ -1433,12 +1447,14 @@ export default function Radare2Terminal() {
                 <StringsView
                     strings={stringsData}
                     onClose={() => setShowStringsView(false)}
+                    onSeekAddress={handleSeekAddress}
                 />
             )}
             {showHexView && (
                 <HexView
                     hexData={hexData}
                     onClose={() => setShowHexView(false)}
+                    onSeekAddress={handleSeekAddress}
                 />
             )}
         </>

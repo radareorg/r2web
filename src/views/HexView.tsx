@@ -10,12 +10,13 @@ type HexLine = {
 type HexViewProps = {
     hexData: HexLine[];
     onClose: () => void;
+    onSeekAddress?: (address: string) => void;
 };
 
 const ROWS_PER_PAGE = 100;
 const BYTES_PER_ROW = 16;
 
-export function HexView({ hexData, onClose }: HexViewProps) {
+export function HexView({ hexData, onClose, onSeekAddress }: HexViewProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [pageInput, setPageInput] = useState("");
@@ -367,6 +368,12 @@ export function HexView({ hexData, onClose }: HexViewProps) {
                                                 fontFamily: "monospace",
                                                 color: "#f39c12",
                                                 whiteSpace: "nowrap",
+                                                cursor: onSeekAddress ? "pointer" : "default",
+                                            }}
+                                            onClick={() => {
+                                                if (onSeekAddress) {
+                                                    onSeekAddress(line.offset);
+                                                }
                                             }}
                                         >
                                             {line.offset}
@@ -513,9 +520,14 @@ export function HexView({ hexData, onClose }: HexViewProps) {
                         alignItems: "center",
                         fontSize: "12px",
                         color: "#666",
+                        flexWrap: "wrap",
+                        gap: "8px",
                     }}
                 >
-                    <span>Double-click or long-press to copy bytes</span>
+                    <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+                        <span>Double-click or long-press to copy bytes</span>
+                        {onSeekAddress && <span>• Click offset to seek</span>}
+                    </div>
                     <span>Press Esc to close</span>
                 </div>
             </div>
