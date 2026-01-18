@@ -768,8 +768,15 @@ export default function Radare2Terminal() {
                                     gap: "8px",
                                 }}
                             >
-                                <span>
-                                    {`Tab ${i + 1}`}
+                                <span
+                                    style={{
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                        flex: 1,
+                                    }}
+                                >
+                                    {`${i + 1}`}
                                     {file ? `: ${file.name}` : ""}
                                 </span>
                                 <span
