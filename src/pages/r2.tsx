@@ -7,6 +7,7 @@ import { R2Tab, type R2TabHandle } from "../r2tab";
 import { useNavigate } from "react-router-dom";
 import { StringsView } from "../views/StringsView";
 import { HexView, type HexLine } from "../views/HexView";
+import { GraphView } from "../views/GraphView";
 
 const HomeIcon = ({ style }: { style?: React.CSSProperties }) => (
     <svg
@@ -43,6 +44,8 @@ export default function Radare2Terminal() {
     const [stringsData, setStringsData] = useState<any[]>([]);
     const [showHexView, setShowHexView] = useState(false);
     const [hexData, setHexData] = useState<HexLine[]>([]);
+    const [showGraphView, setShowGraphView] = useState(false);
+    const [graphData, setGraphData] = useState<string>("");
     const navigate = useNavigate();
 
     // Tabs state
@@ -299,6 +302,39 @@ export default function Radare2Terminal() {
         }
     };
 
+    const handleShowGraph = async () => {
+        if (!isFileSelected) return;
+        const writer = getActiveWriter();
+        const encoder = new TextEncoder();
+        const ref = tabRefs.current[activeTab]?.current;
+        const dir = ref?.getDir();
+
+        if (writer && dir) {
+            writer.write(encoder.encode('?e "\\ec"'));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode("aa"));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode("clear\r"));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode("?e [I] Loading..."));
+            writer.write(encoder.encode("\r"));
+            writer.write(encoder.encode("agfma > mydir/.graph"));
+            writer.write(encoder.encode("\r"));
+
+            setTimeout(async () => {
+                try {
+                    const bytes = await dir.readFile("/.graph");
+                    const output = new TextDecoder().decode(bytes);
+                    setGraphData(output);
+                    await dir.removeFile("/.graph");
+                    setShowGraphView(true);
+                } catch (error) {
+                    console.error("Error reading graph file:", error);
+                }
+            }, 1000);
+        }
+    };
+
     const handleNavigateHome = async () => {
         tabs.forEach(async (id) => {
             const ref = tabRefs.current[id]?.current;
@@ -311,8 +347,7 @@ export default function Radare2Terminal() {
 
         setStringsData([]);
         setHexData([]);
-        setTabs([0]);
-        setActiveTab(0);
+        setGraphData("");
 
         tabRefs.current = {};
 
@@ -374,6 +409,10 @@ export default function Radare2Terminal() {
                     setShowStringsView(false);
                     return;
                 }
+                if (showGraphView) {
+                    setShowGraphView(false);
+                    return;
+                }
                 if (showShortcuts) {
                     setShowShortcuts(false);
                     return;
@@ -405,7 +444,7 @@ export default function Radare2Terminal() {
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [tabs, activeTab, showHexView, showStringsView, showShortcuts]);
+    }, [tabs, activeTab, showHexView, showStringsView, showGraphView, showShortcuts]);
 
     useEffect(() => {
         if (window.innerWidth < 768) {
@@ -1069,6 +1108,24 @@ export default function Radare2Terminal() {
                                             Strings
                                         </button>
                                     </li>
+                                    {currentVersion >= "6.0.9" && (
+                                        <li>
+                                            <button
+                                                onClick={handleShowGraph}
+                                                disabled={!isFileSelected}
+                                                style={{
+                                                    padding: "5px 5px 5px 5px",
+                                                    backgroundColor: "#2d2d2d",
+                                                    color: "#ffffff",
+                                                    marginTop: "10px",
+                                                    width: "100%",
+                                                    textAlign: "center",
+                                                }}
+                                            >
+                                                Graph
+                                            </button>
+                                        </li>
+                                    )}
                                     <li style={{ marginTop: "10px" }}>
                                         <input
                                             type="text"
@@ -1335,7 +1392,7 @@ export default function Radare2Terminal() {
                                                                 await dir.readFile(
                                                                     `/${file.name.split(".").slice(0, -1).join(".")}_m.${file.name.split(".").pop()}`,
                                                                 );
-                                                            console.log(bytes);
+                                                            // console.log(bytes);
                                                             const blob =
                                                                 new Blob(
                                                                     [bytes],
@@ -1513,6 +1570,12 @@ export default function Radare2Terminal() {
                     hexData={hexData}
                     onClose={() => setShowHexView(false)}
                     onSeekAddress={handleSeekAddress}
+                />
+            )}
+            {showGraphView && (
+                <GraphView
+                    graphData={graphData}
+                    onClose={() => setShowGraphView(false)}
                 />
             )}
         </>

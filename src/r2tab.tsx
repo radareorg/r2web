@@ -211,7 +211,7 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
                     history.push(currentInput);
                     historyIndex = history.length;
                     const prompt = term.buffer.active.getLine(term.buffer.active.cursorY)!.translateToString();
-                    console.log('Prompt:', prompt);
+                    // console.log('Prompt:', prompt);
                     const cprompt = prompt.match(/\[0x.*\]/)?.[0];
                     if (cprompt) {
                         term.write('\x1b[2K\r' + cprompt + ' ');
@@ -334,7 +334,7 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
         return () => {
             try {
                 if (r2Writer) {
-                    r2Writer.close();
+                    r2Writer.close().catch(() => { });
                 }
             } catch (_) { }
             try {
@@ -431,7 +431,7 @@ function showLinkPopup(event: MouseEvent, _text: string) {
     popup.style.position = 'fixed';
     popup.style.top = (event.clientY + 25) + 'px';
 
-    const container = (event.target as HTMLElement).parentNode as HTMLElement;
+    const container = (event.target as HTMLElement)?.parentElement || document.body;
     container.appendChild(popup);
 
     let left = event.clientX + 5;
