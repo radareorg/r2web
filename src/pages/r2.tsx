@@ -651,7 +651,7 @@ export default function Radare2Terminal() {
                     }}
                 >
                     <img
-                        src={`${import.meta.env.BASE_URL}/r2.png`}
+                        src={`${import.meta.env.BASE_URL}r2.png`}
                         alt="Radare2 Logo"
                         style={{
                             width: "80px",
