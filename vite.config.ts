@@ -13,6 +13,12 @@ export default defineConfig(({ mode }) => {
         "Cross-Origin-Opener-Policy": "same-origin",
         "Cross-Origin-Embedder-Policy": "require-corp",
       },
+      proxy: {
+        '/wasm': {
+            target: 'http://localhost:3000',
+            changeOrigin: true,
+        }
+      }
     },
     optimizeDeps: {
       exclude: ['@wasmer/sdk']

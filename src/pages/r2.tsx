@@ -100,7 +100,10 @@ export default function Radare2Terminal() {
                     : import.meta.env.MODE === "production" &&
                       import.meta.env.VITE_VERCEL_PROJECT_PRODUCTION_URL
                       ? `https://${import.meta.env.VITE_VERCEL_PROJECT_PRODUCTION_URL}/api/vercel?version=${version}`
-                      : `${import.meta.env.BASE_URL}/wasm/${version}`;
+                      : import.meta.env.VITE_VERCEL_URL ? `https://${import.meta.env.VITE_VERCEL_URL}/api/vercel?version=${version}`
+                        : import.meta.env.VITE_WASM_SERVER
+                          ? `${import.meta.env.VITE_WASM_SERVER.replace(/\/$/, "")}/wasm/${version}`
+                        : `/wasm/${version}`;
             try {
                 response = await fetch(wasmUrl);
             } catch (e) {
@@ -651,7 +654,7 @@ export default function Radare2Terminal() {
                     }}
                 >
                     <img
-                        src={`${import.meta.env.BASE_URL}r2.png`}
+                        src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/r2.png`}
                         alt="Radare2 Logo"
                         style={{
                             width: "80px",
