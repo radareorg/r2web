@@ -12,6 +12,7 @@
     "postinstall": "cp node_modules/coi-serviceworker/coi-serviceworker.min.js public/"
   },
   "dependencies": {
+    "@types/node": "^25.0.9",
     "@wasmer/sdk": "^0.9.0",
     "@xterm/addon-clipboard": "^0.1.0",
     "@xterm/addon-search": "^0.15.0",
