@@ -97,9 +97,10 @@ export default function Radare2Terminal() {
             const wasmUrl =
                 version === "6.0.9"
                     ? "https://radareorg.github.io/r2wasm/radare2.wasm"
-                    : import.meta.env.MODE === "production"
+                    : import.meta.env.MODE === "production" &&
+                      import.meta.env.VITE_VERCEL_PROJECT_PRODUCTION_URL
                       ? `https://${import.meta.env.VITE_VERCEL_PROJECT_PRODUCTION_URL}/api/vercel?version=${version}`
-                      : `http://localhost:3000/wasm/${version}`;
+                      : `${import.meta.env.BASE_URL}/wasm/${version}`;
             try {
                 response = await fetch(wasmUrl);
             } catch (e) {
@@ -650,7 +651,7 @@ export default function Radare2Terminal() {
                     }}
                 >
                     <img
-                        src="/r2.png"
+                        src={`${import.meta.env.BASE_URL}/r2.png`}
                         alt="Radare2 Logo"
                         style={{
                             width: "80px",

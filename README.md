@@ -55,10 +55,29 @@ Or you can run both dev & proxy server at the same time using:
 bun cc
 ```
 
+> [!NOTE]
+> Proxy server is only required to support multiple (older) versions of radare2. If you only care about the latest version, you can skip the proxy server.
+
 Or skip the setup and [try it live](https://r2.revengi.in).
 
 > [!TIP]
 > If you don't have bun installed, you can use npm or yarn or any other package manager which you have installed. Just replace `bun` with `npm` or `yarn` (or any other package manager) in the above commands.
+
+## Building and Deployment
+
+To build for production:
+```shell
+bun run build
+```
+
+By default, the build assumes your app is served from the root path (`/`). If deploying to a subdirectory (e.g., `example.com/online`), set the `VITE_BASE_URL` environment variable:
+
+```shell
+VITE_BASE_URL=/online bun run build
+```
+
+> [!NOTE]
+> When opening the built files directly from your file system (using `file://` protocol), you may encounter CORS errors. Static hosting with a proper HTTP server (like GitHub Pages, Netlify, Vercel, etc.) is recommended or start a local server.
 
 ## Notes
 

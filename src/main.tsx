@@ -14,7 +14,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       .app-root { height: 100vh; width: 100vw; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     `}</style>
     <div className="app-root">
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/r2" element={<Radare2 />} />
