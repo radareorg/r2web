@@ -333,7 +333,13 @@ export default function Radare2Terminal() {
                     await dir.removeFile("/.graph");
                     setShowGraphView(true);
                 } catch (error) {
-                    console.error("Error reading graph file:", error);
+                    if (error instanceof Error && error.message.includes("entry not found")) {
+                        writer.write(encoder.encode("clear\r"));
+                        writer.write(encoder.encode("[E] No function found at current address"));
+                        writer.write(encoder.encode("\r"));
+                    } else {
+                        console.error("Error reading graph file:", error);
+                    }
                 }
             }, 1000);
         }
