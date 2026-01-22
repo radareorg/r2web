@@ -46,6 +46,9 @@ export default function Radare2Terminal() {
     const [hexData, setHexData] = useState<HexLine[]>([]);
     const [showGraphView, setShowGraphView] = useState(false);
     const [graphData, setGraphData] = useState<string>("");
+    const [showScriptConfirm, setShowScriptConfirm] = useState(false);
+    const [scriptFiles, setScriptFiles] = useState<File[]>([]);
+    const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
     const navigate = useNavigate();
 
     // Tabs state
@@ -388,6 +391,59 @@ export default function Radare2Terminal() {
             writer.write(encoder.encode("\r"));
         }
     };
+
+    const isR2Script = (fileName: string): boolean => {
+        return fileName.endsWith('.r2.js') || fileName.endsWith('.r2');
+    };
+
+    const handleFileUpload = async (files: FileList) => {
+        const fileArray = Array.from(files);
+        const r2Scripts = fileArray.filter(f => isR2Script(f.name));
+
+        if (r2Scripts.length > 0) {
+            setPendingFiles(files);
+            setScriptFiles(r2Scripts);
+            setShowScriptConfirm(true);
+            return;
+        }
+
+        const ref = tabRefs.current[activeTab]?.current;
+        if (ref) {
+            await ref.uploadFiles(files);
+        }
+    };
+
+    const handleScriptConfirm = async () => {
+        setShowScriptConfirm(false);
+
+        const ref = tabRefs.current[activeTab]?.current;
+        if (!ref || !pendingFiles) return;
+
+        await ref.uploadFiles(pendingFiles);
+
+        const writer = ref.getWriter();
+        const encoder = new TextEncoder();
+        if (writer) {
+            for (const script of scriptFiles) {
+                const command = `. /mydir/${script.name}`;
+                writer.write(encoder.encode(command));
+                writer.write(encoder.encode("\r"));
+            }
+        }
+
+        setPendingFiles(null);
+        setScriptFiles([]);
+    };
+
+    const handleScriptCancel = async () => {
+        setShowScriptConfirm(false);
+        const ref = tabRefs.current[activeTab]?.current;
+        if (ref && pendingFiles) {
+            await ref.uploadFiles(pendingFiles);
+        }
+        setPendingFiles(null);
+        setScriptFiles([]);
+    };
     function getActiveSearchAddon() {
         const ref = tabRefs.current[activeTab]?.current;
         return ref?.getSearchAddon() || null;
@@ -641,6 +697,46 @@ export default function Radare2Terminal() {
                                 <span>Go to address</span>
                                 <span>Ctrl + G</span>
                             </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {showScriptConfirm && (
+                <>
+                    <div
+                        className="shortcuts-backdrop"
+                        onClick={handleScriptCancel}
+                    />
+                    <div className="shortcuts-modal">
+                        <h3 style={{ margin: 0, marginBottom: "16px" }}>
+                            R2 Script Detected
+                        </h3>
+                        <p style={{ marginBottom: "16px", color: "#ccc" }}>
+                            You just chose {scriptFiles.length > 1 ? 'files which seem' : 'a file which seems'}
+                            like {scriptFiles.length > 1 ? 'r2 scripts' : 'an r2 script'}. Would you like to load {scriptFiles.length > 1 ? 'them' : 'it'}?
+                        </p>
+                        <div style={{ marginBottom: "12px", color: "#888", fontSize: "0.9rem" }}>
+                            {scriptFiles.map(f => (
+                                <div key={f.name} style={{ padding: "4px 8px", background: "#2a2a2a", marginBottom: "4px", borderRadius: "4px" }}>
+                                    {f.name}
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                            <button
+                                className="ghost"
+                                onClick={handleScriptCancel}
+                                style={{ padding: "6px 12px" }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleScriptConfirm}
+                                style={{ padding: "6px 12px" }}
+                            >
+                                Load Script{scriptFiles.length > 1 ? 's' : ''}
+                            </button>
                         </div>
                     </div>
                 </>
@@ -1494,15 +1590,8 @@ export default function Radare2Terminal() {
                                         type="file"
                                         multiple
                                         onChange={(event) => {
-                                            const ref =
-                                                tabRefs.current[activeTab]
-                                                    ?.current;
-                                            if (ref) {
-                                                if (event.target.files) {
-                                                    ref.uploadFiles(
-                                                        event.target.files,
-                                                    );
-                                                }
+                                            if (event.target.files) {
+                                                handleFileUpload(event.target.files);
                                             }
                                         }}
                                         style={{ display: "none" }}
