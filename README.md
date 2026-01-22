@@ -1,19 +1,26 @@
-<img border=0 src="public/r2cloud.svg" type="image/svg+xml" alt="screenshot" align="left" width="130px">
+<img border=0 src="public/r2cloud.svg" type="image/svg+xml" alt="logo" align="left" width="130px">
 
 
 ## r2web: __Access radare2 from anywhere, anytime.__
-
-
-
-https://github.com/user-attachments/assets/1d60bc1a-2e91-4868-ac5f-3a861d0af537
-
-
 
 ## Overview
 
 r2web lets you run radare2 without local installs or platform hassles. Analyze files directly in your browser. It runs entirely client-side using radare2 WASI and Wasmer, with an [xterm.js](https://xtermjs.org/) frontend for interactive command execution.
 
 👉 [Try it live](https://r2.revengi.in)
+
+<details>
+<summary>Click to view Screenshots</summary>
+
+| | | |
+| :---: | :---: | :---: |
+| <img width="1000" height="928" alt="image" src="https://github.com/user-attachments/assets/2dc36f22-1f30-4c25-9c0e-daeb638d8259" /> | <img src="https://github.com/user-attachments/assets/1a680bd6-8852-419c-b69d-c97a3cdd9684" width="100%" /> | <img src="https://github.com/user-attachments/assets/a440c08c-de83-4318-b2d7-2d4944ffd5fc" width="100%" /> |
+| **Dashboard** | **Shortcuts** | **Strings View** |
+| <img src="https://github.com/user-attachments/assets/defad6ee-34a3-49c7-bda6-317f9660d899" width="100%" /> | <img src="https://github.com/user-attachments/assets/64b05356-4881-42af-b54f-19f24d54776a" width="100%" /> | <img src="https://github.com/user-attachments/assets/c5516ae6-fc36-45e9-a39a-bff1bcb42751" width="100%" /> |
+| **Goto Address** | **Search** | **Graph View** |
+
+</details>
+
 
 ## Features
 
@@ -76,20 +83,34 @@ Or skip the setup and [try it live](https://r2.revengi.in).
 > 
 > 2. When opening the built files directly from your file system (using `file://` protocol), you may encounter CORS errors. Static hosting with a proper HTTP server (like GitHub Pages, Netlify, Vercel, etc.) is recommended or start a local server.
 
-## Notes
+## FAQ
 
-- This is a work in progress. Expect bugs and missing features.
-- The radare2 binary is downloaded on first load and cached for future use (an option to disable caching is also given).
-- ~~Currently there's no way to save modified files, (seems like an issue on r2wasm side), figuring out a way to fix it.~~ (Fixed on r2 versions 6.0.3 onwards...)
+**Q: Why am I unable to save files?**
+
+Saving functionality is supported from **r2 version 6.0.3 onwards**. Earlier versions had a limitation on the r2-wasm side that has since been resolved.
+
+**Q: Why isn't the Graph view loading?**
+
+The Graph view requires **r2 version 6.0.9 or higher** to function correctly.
+
+**Q: Which browsers are supported?**
+
+While we aim for broad compatibility, there are currently known issues with **Firefox**. For the most stable experience, we recommend using **Chromium-based browsers** (such as Chrome, Edge, or Brave).
+
+**Q: How is the radare2 binary handled?**
+
+The binary is automatically downloaded on the first load and cached locally for future use. If you prefer not to store it, an option to disable caching is available at start during version selection.
 
 
 ## Contributing
-Contributions are welcome! Please open an issue or submit a pull request.
+Contributions are welcome! Please open an issue or submit a pull request. To keep the project aligned with its core goals, please keep the following guidelines in mind:
+- **Avoid UI Boilerplates:** This project is built on the philosophy of self-integration. Please avoid adding external UI libraries (e.g., **Tailwind CSS**, **shadcn/ui**) or heavy boilerplates.
+- **Minimize Dependencies:** We aim to keep the codebase lightweight. Whenever possible, try to implement logic and styling using native tools rather than adding new packages.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-- radare license can be found [here](https://github.com/radareorg/radare2/blob/master/COPYING.md).
+- radare2 license can be found [here](https://github.com/radareorg/radare2/blob/master/COPYING.md).
 
 ## Similar Projects
 
