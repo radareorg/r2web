@@ -2,12 +2,13 @@ import { useEffect, useRef, useState, createRef } from "react";
 import { fileStore } from "../store/FileStore";
 import wasmerSDKModule from "@wasmer/sdk/wasm?url";
 import "xterm/css/xterm.css";
-import { type Wasmer } from "@wasmer/sdk";
+import { type Wasmer, type Directory } from "@wasmer/sdk";
 import { R2Tab, type R2TabHandle } from "../r2tab";
 import { useNavigate } from "react-router-dom";
 import { StringsView } from "../views/StringsView";
 import { HexView, type HexLine } from "../views/HexView";
 import { GraphView } from "../views/GraphView";
+import { CodeEditorView } from "../views/CodeEditorView";
 
 const HomeIcon = ({ style }: { style?: React.CSSProperties }) => (
     <svg
@@ -49,6 +50,7 @@ export default function Radare2Terminal() {
     const [showScriptConfirm, setShowScriptConfirm] = useState(false);
     const [scriptFiles, setScriptFiles] = useState<File[]>([]);
     const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
+    const [showCodeEditor, setShowCodeEditor] = useState(false);
     const navigate = useNavigate();
 
     // Tabs state
@@ -373,6 +375,11 @@ export default function Radare2Terminal() {
     function getActiveWriter() {
         const ref = tabRefs.current[activeTab]?.current;
         return ref?.getWriter();
+    }
+
+    function getActiveDir(): Directory | null {
+        const ref = tabRefs.current[activeTab]?.current;
+        return ref?.getDir() || null;
     }
 
     const handleSeekAddress = (address: string) => {
@@ -1232,6 +1239,22 @@ export default function Radare2Terminal() {
                                             </button>
                                         </li>
                                     )}
+                                    <li>
+                                        <button
+                                            onClick={() => setShowCodeEditor(true)}
+                                            disabled={!isFileSelected}
+                                            style={{
+                                                padding: "5px 5px 5px 5px",
+                                                backgroundColor: "#2d2d2d",
+                                                color: "#ffffff",
+                                                marginTop: "10px",
+                                                width: "100%",
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            Code Editor
+                                        </button>
+                                    </li>
                                     <li style={{ marginTop: "10px" }}>
                                         <input
                                             type="text"
@@ -1572,6 +1595,7 @@ export default function Radare2Terminal() {
                                                 .getElementById("file-upload")
                                                 ?.click()
                                         }
+                                        disabled={!isFileSelected}
                                         style={{
                                             padding: "5px 5px 5px 5px",
                                             backgroundColor: "#2d2d2d",
@@ -1677,6 +1701,11 @@ export default function Radare2Terminal() {
                     onClose={() => setShowGraphView(false)}
                 />
             )}
+            <CodeEditorView
+                isOpen={showCodeEditor}
+                onClose={() => setShowCodeEditor(false)}
+                dir={getActiveDir()}
+            />
         </>
     );
 }
