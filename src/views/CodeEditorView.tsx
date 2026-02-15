@@ -91,6 +91,24 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
     const [showThemeDropdown, setShowThemeDropdown] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [fileToDelete, setFileToDelete] = useState<string>("");
+    const [isMobile, setIsMobile] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            const mobile = window.innerWidth < 768;
+            setIsMobile(mobile);
+            if (mobile) {
+                setSidebarOpen(false);
+            } else {
+                setSidebarOpen(true);
+            }
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const getExtensions = useCallback((_doc: string, langExtension: Extension = javascript()): Extension[] => {
         const extensions: Extension[] = [
@@ -338,13 +356,13 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
             <div
                 style={{
                     position: "fixed",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: "90vw",
-                    height: "85vh",
+                    top: isMobile ? 0 : "50%",
+                    left: isMobile ? 0 : "50%",
+                    transform: isMobile ? "none" : "translate(-50%, -50%)",
+                    width: isMobile ? "100vw" : "90vw",
+                    height: isMobile ? "100vh" : "85vh",
                     backgroundColor: selectedTheme.isDark ? "#1e1e1e" : "#ffffff",
-                    borderRadius: "12px",
+                    borderRadius: isMobile ? 0 : "12px",
                     border: "1px solid #333",
                     boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)",
                     zIndex: 1001,
@@ -364,18 +382,50 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                         backgroundColor: selectedTheme.isDark ? "#252525" : "#f0f0f0",
                     }}
                 >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <h3 style={{ margin: 0, fontSize: "16px", color: selectedTheme.isDark ? "#fff" : "#333" }}>
-                            Code Editor {currentFile && `- ${currentFile}`}
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                        <h3 style={{
+                            margin: 0,
+                            fontSize: isMobile ? "14px" : "16px",
+                            color: selectedTheme.isDark ? "#fff" : "#333",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                        }}>
+                            {isMobile ? (currentFile || "Editor") : `Code Editor ${currentFile ? `- ${currentFile}` : ""}`}
                             {isDirty && <span style={{ color: "#f39c12" }}> *</span>}
                         </h3>
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        {isMobile && (
+                            <button
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                                style={{
+                                    padding: "8px 12px",
+                                    background: sidebarOpen
+                                        ? "linear-gradient(180deg, #3b82f6, #2563eb)"
+                                        : (selectedTheme.isDark
+                                            ? "linear-gradient(180deg, #3a3a3a, #2a2a2a)"
+                                            : "linear-gradient(180deg, #e0e0e0, #d0d0d0)"),
+                                    color: "#fff",
+                                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    fontSize: "13px",
+                                    minWidth: "44px",
+                                    minHeight: "44px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                Files
+                            </button>
+                        )}
                         <div style={{ position: "relative" }}>
                             <button
                                 onClick={() => setShowThemeDropdown(!showThemeDropdown)}
                                 style={{
-                                    padding: "6px 12px",
+                                    padding: isMobile ? "8px 12px" : "6px 12px",
                                     background: selectedTheme.isDark
                                         ? "linear-gradient(180deg, #3a3a3a, #2a2a2a)"
                                         : "linear-gradient(180deg, #e0e0e0, #d0d0d0)",
@@ -384,12 +434,13 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                                     borderRadius: "6px",
                                     cursor: "pointer",
                                     fontSize: "13px",
+                                    minHeight: isMobile ? "44px" : "auto",
                                     display: "flex",
                                     alignItems: "center",
                                     gap: "4px",
                                 }}
                             >
-                                {selectedTheme.name} ▼
+                                {isMobile ? "Theme" : selectedTheme.name} ▼
                             </button>
                             {showThemeDropdown && (
                                 <div
@@ -443,22 +494,25 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                         <button
                             onClick={() => setShowNewFileInput(true)}
                             style={{
-                                padding: "6px 12px",
+                                padding: isMobile ? "8px 12px" : "6px 12px",
                                 background: "linear-gradient(180deg, #27ae60, #219a52)",
                                 color: "#fff",
                                 border: "1px solid rgba(255, 255, 255, 0.06)",
                                 borderRadius: "6px",
                                 cursor: "pointer",
                                 fontSize: "13px",
+                                minHeight: isMobile ? "44px" : "auto",
+                                display: "flex",
+                                alignItems: "center",
                             }}
                         >
-                            New File
+                            {isMobile ? "New" : "New File"}
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={!isDirty && !!currentFile}
                             style={{
-                                padding: "6px 12px",
+                                padding: isMobile ? "8px 12px" : "6px 12px",
                                 background: !isDirty && !!currentFile
                                     ? "linear-gradient(180deg, #2d2d2d, #262626)"
                                     : "linear-gradient(180deg, #3b82f6, #2563eb)",
@@ -468,14 +522,17 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                                 cursor: !isDirty && !!currentFile ? "not-allowed" : "pointer",
                                 fontSize: "13px",
                                 opacity: !isDirty && !!currentFile ? 0.5 : 1,
+                                minHeight: isMobile ? "44px" : "auto",
+                                display: "flex",
+                                alignItems: "center",
                             }}
                         >
-                            Save (Ctrl+S)
+                            Save
                         </button>
                         <button
                             onClick={onClose}
                             style={{
-                                padding: "6px 12px",
+                                padding: isMobile ? "8px 12px" : "6px 12px",
                                 background: selectedTheme.isDark
                                     ? "linear-gradient(180deg, #2f2f35, #242427)"
                                     : "linear-gradient(180deg, #e0e0e0, #d0d0d0)",
@@ -484,6 +541,9 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                                 borderRadius: "6px",
                                 cursor: "pointer",
                                 fontSize: "13px",
+                                minHeight: isMobile ? "44px" : "auto",
+                                display: "flex",
+                                alignItems: "center",
                             }}
                         >
                             Close
@@ -641,14 +701,23 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                     </div>
                 )}
 
-                <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+                <div style={{
+                    display: "flex",
+                    flex: 1,
+                    overflow: "hidden",
+                    flexDirection: isMobile ? "column" : "row",
+                }}>
+                    {(!isMobile || sidebarOpen) && (
                     <div
                         style={{
-                            width: "200px",
+                            width: isMobile ? "100%" : "200px",
+                            height: isMobile ? "200px" : "auto",
                             backgroundColor: selectedTheme.isDark ? "#252525" : "#f5f5f5",
-                            borderRight: "1px solid #333",
+                            borderRight: isMobile ? "none" : "1px solid #333",
+                            borderBottom: isMobile ? "1px solid #333" : "none",
                             overflowY: "auto",
                             padding: "8px 0",
+                            flexShrink: 0,
                         }}
                     >
                         <div
@@ -727,6 +796,7 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                             ))
                         )}
                     </div>
+                    )}
 
                     <div
                         ref={editorRef}
@@ -734,6 +804,7 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                             flex: 1,
                             overflow: "auto",
                             backgroundColor: selectedTheme.isDark ? "#1e1e1e" : "#ffffff",
+                            minHeight: isMobile && sidebarOpen ? "calc(100% - 200px)" : "auto",
                         }}
                     />
                 </div>
@@ -746,11 +817,13 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        fontSize: "12px",
+                        fontSize: isMobile ? "11px" : "12px",
                         color: selectedTheme.isDark ? "#888" : "#666",
+                        flexWrap: "wrap",
+                        gap: "4px",
                     }}
                 >
-                    <span>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "50%" }}>
                         {currentFile ? `${currentFile}` : "No file selected"}
                     </span>
                     <span>
