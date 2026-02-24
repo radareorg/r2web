@@ -1655,25 +1655,54 @@ export default function Radare2Terminal() {
                                 flex: 1,
                                 minHeight: 0,
                                 position: "relative",
+                                display: "flex",
                             }}
                         >
-                            {tabs.map((id) => {
-                                if (!tabRefs.current[id])
-                                    tabRefs.current[id] =
-                                        createRef<R2TabHandle>();
-                                return (
-                                    <R2Tab
-                                        key={id}
-                                        ref={tabRefs.current[id]}
-                                        pkg={pkg}
-                                        file={fileStore.getFile()}
-                                        active={id === activeTab}
+                            <div
+                                style={{
+                                    flex: showCodeEditor && window.innerWidth >= 1024 ? 1 : 1,
+                                    minHeight: 0,
+                                    position: "relative",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                }}
+                            >
+                                {tabs.map((id) => {
+                                    if (!tabRefs.current[id])
+                                        tabRefs.current[id] =
+                                            createRef<R2TabHandle>();
+                                    return (
+                                        <R2Tab
+                                            key={id}
+                                            ref={tabRefs.current[id]}
+                                            pkg={pkg}
+                                            file={fileStore.getFile()}
+                                            active={id === activeTab}
+                                        />
+                                    );
+                                })}
+                                {tabs.length === 0 && (
+                                    <div style={{ color: "#ccc", padding: "1rem" }}>
+                                        No tabs open
+                                    </div>
+                                )}
+                            </div>
+                            {showCodeEditor && window.innerWidth >= 1024 && (
+                                <div
+                                    style={{
+                                        width: "50%",
+                                        minWidth: "400px",
+                                        borderLeft: "1px solid #333",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                    }}
+                                >
+                                    <CodeEditorView
+                                        isOpen={true}
+                                        onClose={() => setShowCodeEditor(false)}
+                                        dir={getActiveDir()}
+                                        docked={true}
                                     />
-                                );
-                            })}
-                            {tabs.length === 0 && (
-                                <div style={{ color: "#ccc", padding: "1rem" }}>
-                                    No tabs open
                                 </div>
                             )}
                         </div>
@@ -1701,11 +1730,13 @@ export default function Radare2Terminal() {
                     onClose={() => setShowGraphView(false)}
                 />
             )}
-            <CodeEditorView
-                isOpen={showCodeEditor}
-                onClose={() => setShowCodeEditor(false)}
-                dir={getActiveDir()}
-            />
+            {showCodeEditor && window.innerWidth < 1024 && (
+                <CodeEditorView
+                    isOpen={showCodeEditor}
+                    onClose={() => setShowCodeEditor(false)}
+                    dir={getActiveDir()}
+                />
+            )}
         </>
     );
 }

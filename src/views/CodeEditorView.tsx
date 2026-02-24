@@ -55,6 +55,7 @@ type CodeEditorViewProps = {
     onClose: () => void;
     dir: Directory | null;
     onFileSelect?: (fileName: string) => void;
+    docked?: boolean;
 };
 
 function getLanguageExtension(filename: string): Extension {
@@ -76,7 +77,7 @@ function getLanguageExtension(filename: string): Extension {
     }
 }
 
-export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEditorViewProps) {
+export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = false }: CodeEditorViewProps) {
     const editorRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
     const [files, setFiles] = useState<DirEntry[]>([]);
@@ -341,6 +342,464 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect }: CodeEdito
     };
 
     if (!isOpen) return null;
+
+    const isLargeScreen = !isMobile && window.innerWidth >= 1024;
+    const shouldDock = docked && isLargeScreen;
+
+    if (shouldDock) {
+        return (
+            <div
+                style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "hidden",
+                    backgroundColor: selectedTheme.isDark ? "#1e1e1e" : "#ffffff",
+                    minWidth: 0,
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "8px 12px",
+                        borderBottom: "1px solid #333",
+                        backgroundColor: selectedTheme.isDark ? "#252525" : "#f0f0f0",
+                        flexShrink: 0,
+                    }}
+                >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                        <h3 style={{
+                            margin: 0,
+                            fontSize: "14px",
+                            color: selectedTheme.isDark ? "#fff" : "#333",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                        }}>
+                            Code Editor {currentFile ? `- ${currentFile}` : ""}
+                            {isDirty && <span style={{ color: "#f39c12" }}> *</span>}
+                        </h3>
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <div style={{ position: "relative" }}>
+                            <button
+                                onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+                                style={{
+                                    padding: "6px 10px",
+                                    background: selectedTheme.isDark
+                                        ? "linear-gradient(180deg, #3a3a3a, #2a2a2a)"
+                                        : "linear-gradient(180deg, #e0e0e0, #d0d0d0)",
+                                    color: selectedTheme.isDark ? "#fff" : "#333",
+                                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    fontSize: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                }}
+                            >
+                                {selectedTheme.name} ▼
+                            </button>
+                            {showThemeDropdown && (
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: "100%",
+                                        right: 0,
+                                        marginTop: "4px",
+                                        backgroundColor: selectedTheme.isDark ? "#2a2a2a" : "#ffffff",
+                                        border: "1px solid #333",
+                                        borderRadius: "6px",
+                                        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                                        zIndex: 1002,
+                                        minWidth: "160px",
+                                        maxHeight: "300px",
+                                        overflowY: "auto",
+                                    }}
+                                >
+                                    {themes.map((theme) => (
+                                        <div
+                                            key={theme.name}
+                                            onClick={() => handleThemeChange(theme)}
+                                            style={{
+                                                padding: "8px 12px",
+                                                cursor: "pointer",
+                                                backgroundColor: selectedTheme.name === theme.name
+                                                    ? (selectedTheme.isDark ? "#3b82f6" : "#2563eb")
+                                                    : "transparent",
+                                                color: selectedTheme.name === theme.name
+                                                    ? "#fff"
+                                                    : (selectedTheme.isDark ? "#ccc" : "#333"),
+                                                fontSize: "13px",
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (selectedTheme.name !== theme.name) {
+                                                    e.currentTarget.style.backgroundColor = selectedTheme.isDark ? "#333" : "#f0f0f0";
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (selectedTheme.name !== theme.name) {
+                                                    e.currentTarget.style.backgroundColor = "transparent";
+                                                }
+                                            }}
+                                        >
+                                            {theme.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setShowNewFileInput(true)}
+                            style={{
+                                padding: "6px 10px",
+                                background: "linear-gradient(180deg, #27ae60, #219a52)",
+                                color: "#fff",
+                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                display: "flex",
+                                alignItems: "center",
+                            }}
+                        >
+                            New
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={!isDirty && !!currentFile}
+                            style={{
+                                padding: "6px 10px",
+                                background: !isDirty && !!currentFile
+                                    ? "linear-gradient(180deg, #2d2d2d, #262626)"
+                                    : "linear-gradient(180deg, #3b82f6, #2563eb)",
+                                color: "#fff",
+                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                borderRadius: "6px",
+                                cursor: !isDirty && !!currentFile ? "not-allowed" : "pointer",
+                                fontSize: "12px",
+                                opacity: !isDirty && !!currentFile ? 0.5 : 1,
+                                display: "flex",
+                                alignItems: "center",
+                            }}
+                        >
+                            Save
+                        </button>
+                        <button
+                            onClick={onClose}
+                            style={{
+                                padding: "6px 10px",
+                                background: selectedTheme.isDark
+                                    ? "linear-gradient(180deg, #2f2f35, #242427)"
+                                    : "linear-gradient(180deg, #e0e0e0, #d0d0d0)",
+                                color: selectedTheme.isDark ? "#fff" : "#333",
+                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                display: "flex",
+                                alignItems: "center",
+                            }}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+
+                {showNewFileInput && (
+                    <div
+                        style={{
+                            padding: "8px 12px",
+                            backgroundColor: selectedTheme.isDark ? "#2a2a2a" : "#f5f5f5",
+                            borderBottom: "1px solid #333",
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: "center",
+                            flexShrink: 0,
+                        }}
+                    >
+                        <span style={{ color: selectedTheme.isDark ? "#fff" : "#333", fontSize: "13px" }}>Filename:</span>
+                        <input
+                            type="text"
+                            value={newFileName}
+                            onChange={(e) => setNewFileName(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") handleCreateNewFile();
+                                if (e.key === "Escape") {
+                                    setShowNewFileInput(false);
+                                    setNewFileName("");
+                                }
+                            }}
+                            placeholder="Enter filename"
+                            autoFocus
+                            style={{
+                                flex: 1,
+                                padding: "6px 10px",
+                                backgroundColor: selectedTheme.isDark ? "#1e1e1e" : "#fff",
+                                color: selectedTheme.isDark ? "#fff" : "#333",
+                                border: "1px solid #3d3d3d",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                            }}
+                        />
+                        <button
+                            onClick={handleCreateNewFile}
+                            disabled={!newFileName.trim()}
+                            style={{
+                                padding: "6px 12px",
+                                background: !newFileName.trim()
+                                    ? "linear-gradient(180deg, #2d2d2d, #262626)"
+                                    : "linear-gradient(180deg, #3b82f6, #2563eb)",
+                                color: "#fff",
+                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                borderRadius: "6px",
+                                cursor: !newFileName.trim() ? "not-allowed" : "pointer",
+                                fontSize: "12px",
+                                opacity: !newFileName.trim() ? 0.5 : 1,
+                            }}
+                        >
+                            Create
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowNewFileInput(false);
+                                setNewFileName("");
+                            }}
+                            style={{
+                                padding: "6px 12px",
+                                background: selectedTheme.isDark
+                                    ? "linear-gradient(180deg, #2f2f35, #242427)"
+                                    : "linear-gradient(180deg, #e0e0e0, #d0d0d0)",
+                                color: selectedTheme.isDark ? "#fff" : "#333",
+                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                )}
+
+                {showSaveAsInput && (
+                    <div
+                        style={{
+                            padding: "8px 12px",
+                            backgroundColor: selectedTheme.isDark ? "#2a2a2a" : "#f5f5f5",
+                            borderBottom: "1px solid #333",
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: "center",
+                            flexShrink: 0,
+                        }}
+                    >
+                        <span style={{ color: selectedTheme.isDark ? "#fff" : "#333", fontSize: "13px" }}>Save as:</span>
+                        <input
+                            type="text"
+                            value={saveAsFileName}
+                            onChange={(e) => setSaveAsFileName(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveAs();
+                                if (e.key === "Escape") {
+                                    setShowSaveAsInput(false);
+                                    setSaveAsFileName("");
+                                }
+                            }}
+                            placeholder="Enter filename"
+                            autoFocus
+                            style={{
+                                flex: 1,
+                                padding: "6px 10px",
+                                backgroundColor: selectedTheme.isDark ? "#1e1e1e" : "#fff",
+                                color: selectedTheme.isDark ? "#fff" : "#333",
+                                border: "1px solid #3d3d3d",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                            }}
+                        />
+                        <button
+                            onClick={handleSaveAs}
+                            disabled={!saveAsFileName.trim()}
+                            style={{
+                                padding: "6px 12px",
+                                background: !saveAsFileName.trim()
+                                    ? "linear-gradient(180deg, #2d2d2d, #262626)"
+                                    : "linear-gradient(180deg, #3b82f6, #2563eb)",
+                                color: "#fff",
+                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                borderRadius: "6px",
+                                cursor: !saveAsFileName.trim() ? "not-allowed" : "pointer",
+                                fontSize: "12px",
+                                opacity: !saveAsFileName.trim() ? 0.5 : 1,
+                            }}
+                        >
+                            Save
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowSaveAsInput(false);
+                                setSaveAsFileName("");
+                            }}
+                            style={{
+                                padding: "6px 12px",
+                                background: selectedTheme.isDark
+                                    ? "linear-gradient(180deg, #2f2f35, #242427)"
+                                    : "linear-gradient(180deg, #e0e0e0, #d0d0d0)",
+                                color: selectedTheme.isDark ? "#fff" : "#333",
+                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                )}
+
+                <div style={{
+                    display: "flex",
+                    flex: 1,
+                    overflow: "hidden",
+                }}>
+                    <div
+                        style={{
+                            width: "180px",
+                            height: "auto",
+                            backgroundColor: selectedTheme.isDark ? "#252525" : "#f5f5f5",
+                            borderRight: "1px solid #333",
+                            overflowY: "auto",
+                            padding: "8px 0",
+                            flexShrink: 0,
+                        }}
+                    >
+                        <div
+                            style={{
+                                padding: "8px 12px",
+                                fontSize: "12px",
+                                color: selectedTheme.isDark ? "#888" : "#666",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                            }}
+                        >
+                            Files
+                        </div>
+                        {files.length === 0 ? (
+                            <div
+                                style={{
+                                    padding: "12px",
+                                    color: selectedTheme.isDark ? "#666" : "#999",
+                                    fontSize: "13px",
+                                    textAlign: "center",
+                                }}
+                            >
+                                No files yet
+                            </div>
+                        ) : (
+                            files.map((file) => (
+                                <div
+                                    key={file.name}
+                                    onClick={() => loadFile(file.name)}
+                                    style={{
+                                        padding: "8px 12px",
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        backgroundColor: currentFile === file.name
+                                            ? "#3b82f6"
+                                            : "transparent",
+                                        color: currentFile === file.name
+                                            ? "#fff"
+                                            : (selectedTheme.isDark ? "#ccc" : "#333"),
+                                        fontSize: "13px",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (currentFile !== file.name) {
+                                            e.currentTarget.style.backgroundColor = selectedTheme.isDark ? "#333" : "#e0e0e0";
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (currentFile !== file.name) {
+                                            e.currentTarget.style.backgroundColor = "transparent";
+                                        }
+                                    }}
+                                >
+                                    <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                                        {file.name}
+                                    </span>
+                                    <span
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteFile(file.name);
+                                        }}
+                                        style={{
+                                            opacity: 0,
+                                            cursor: "pointer",
+                                            fontSize: "16px",
+                                            padding: "0 4px",
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.opacity = "1";
+                                        }}
+                                    >
+                                        ×
+                                    </span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div
+                        ref={editorRef}
+                        style={{
+                            flex: 1,
+                            overflow: "auto",
+                            backgroundColor: selectedTheme.isDark ? "#1e1e1e" : "#ffffff",
+                        }}
+                    />
+                </div>
+
+                <div
+                    style={{
+                        padding: "6px 12px",
+                        backgroundColor: selectedTheme.isDark ? "#252525" : "#f0f0f0",
+                        borderTop: "1px solid #333",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontSize: "11px",
+                        color: selectedTheme.isDark ? "#888" : "#666",
+                        flexShrink: 0,
+                    }}
+                >
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "50%" }}>
+                        {currentFile ? `${currentFile}` : "No file selected"}
+                    </span>
+                    <span>
+                        {isDirty ? "Modified" : "Saved"} | Lines: {content.split("\n").length} | Chars: {content.length}
+                    </span>
+                </div>
+                <ConfirmDialog
+                    isOpen={showDeleteConfirm}
+                    title="Delete File"
+                    message={`Are you sure you want to delete "${fileToDelete}"? This action cannot be undone.`}
+                    onClose={() => {
+                        setShowDeleteConfirm(false);
+                        setFileToDelete("");
+                    }}
+                    onConfirm={confirmDeleteFile}
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    isDark={selectedTheme.isDark}
+                />
+            </div>
+        );
+    }
 
     return (
         <>
