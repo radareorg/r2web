@@ -51,6 +51,8 @@ export default function Radare2Terminal() {
     const [scriptFiles, setScriptFiles] = useState<File[]>([]);
     const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
     const [showCodeEditor, setShowCodeEditor] = useState(false);
+    const [codeEditorFullscreen, setCodeEditorFullscreen] = useState(false);
+    const [codeEditorRefreshKey, setCodeEditorRefreshKey] = useState(0);
     const navigate = useNavigate();
 
     // Tabs state
@@ -417,6 +419,7 @@ export default function Radare2Terminal() {
         const ref = tabRefs.current[activeTab]?.current;
         if (ref) {
             await ref.uploadFiles(files);
+            setCodeEditorRefreshKey(prev => prev + 1);
         }
     };
 
@@ -438,6 +441,7 @@ export default function Radare2Terminal() {
             }
         }
 
+        setCodeEditorRefreshKey(prev => prev + 1);
         setPendingFiles(null);
         setScriptFiles([]);
     };
@@ -447,6 +451,7 @@ export default function Radare2Terminal() {
         const ref = tabRefs.current[activeTab]?.current;
         if (ref && pendingFiles) {
             await ref.uploadFiles(pendingFiles);
+            setCodeEditorRefreshKey(prev => prev + 1);
         }
         setPendingFiles(null);
         setScriptFiles([]);
@@ -1702,6 +1707,10 @@ export default function Radare2Terminal() {
                                         onClose={() => setShowCodeEditor(false)}
                                         dir={getActiveDir()}
                                         docked={true}
+                                        refreshKey={codeEditorRefreshKey}
+                                        onFullscreen={() => {
+                                            setCodeEditorFullscreen(true);
+                                        }}
                                     />
                                 </div>
                             )}
@@ -1730,11 +1739,15 @@ export default function Radare2Terminal() {
                     onClose={() => setShowGraphView(false)}
                 />
             )}
-            {showCodeEditor && window.innerWidth < 1024 && (
+            {(showCodeEditor && window.innerWidth < 1024) || codeEditorFullscreen && (
                 <CodeEditorView
-                    isOpen={showCodeEditor}
-                    onClose={() => setShowCodeEditor(false)}
+                    isOpen={showCodeEditor || codeEditorFullscreen}
+                    onClose={() => {
+                        setShowCodeEditor(false);
+                        setCodeEditorFullscreen(false);
+                    }}
                     dir={getActiveDir()}
+                    refreshKey={codeEditorRefreshKey}
                 />
             )}
         </>

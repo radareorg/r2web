@@ -56,6 +56,8 @@ type CodeEditorViewProps = {
     dir: Directory | null;
     onFileSelect?: (fileName: string) => void;
     docked?: boolean;
+    onFullscreen?: () => void;
+    refreshKey?: number;
 };
 
 function getLanguageExtension(filename: string): Extension {
@@ -77,7 +79,7 @@ function getLanguageExtension(filename: string): Extension {
     }
 }
 
-export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = false }: CodeEditorViewProps) {
+export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = false, onFullscreen, refreshKey }: CodeEditorViewProps) {
     const editorRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
     const [files, setFiles] = useState<DirEntry[]>([]);
@@ -194,6 +196,12 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
             loadFiles();
         }
     }, [isOpen, dir, loadFiles]);
+
+    useEffect(() => {
+        if (refreshKey && isOpen && dir) {
+            loadFiles();
+        }
+    }, [refreshKey, isOpen, dir, loadFiles]);
 
     useEffect(() => {
         if (!editorRef.current || !isOpen) return;
@@ -383,6 +391,27 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
                         </h3>
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        {onFullscreen && (
+                            <button
+                                onClick={onFullscreen}
+                                title="Fullscreen"
+                                style={{
+                                    padding: "6px 10px",
+                                    background: selectedTheme.isDark
+                                        ? "linear-gradient(180deg, #3a3a3a, #2a2a2a)"
+                                        : "linear-gradient(180deg, #e0e0e0, #d0d0d0)",
+                                    color: selectedTheme.isDark ? "#fff" : "#333",
+                                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    fontSize: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                }}
+                            >
+                                ⛶
+                            </button>
+                        )}
                         <div style={{ position: "relative" }}>
                             <button
                                 onClick={() => setShowThemeDropdown(!showThemeDropdown)}
