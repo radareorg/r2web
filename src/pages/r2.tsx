@@ -61,6 +61,7 @@ export default function Radare2Terminal() {
     const tabRefs = useRef<Record<number, React.RefObject<R2TabHandle | null>>>(
         {},
     );
+    const fileInputRef = useRef<HTMLInputElement>(null);
     if (!tabRefs.current[0])
         tabRefs.current[0] = createRef<R2TabHandle | null>();
 
@@ -421,6 +422,10 @@ export default function Radare2Terminal() {
             await ref.uploadFiles(files);
             setCodeEditorRefreshKey(prev => prev + 1);
         }
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
     const handleScriptConfirm = async () => {
@@ -444,6 +449,10 @@ export default function Radare2Terminal() {
         setCodeEditorRefreshKey(prev => prev + 1);
         setPendingFiles(null);
         setScriptFiles([]);
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
     const handleScriptCancel = async () => {
@@ -455,6 +464,10 @@ export default function Radare2Terminal() {
         }
         setPendingFiles(null);
         setScriptFiles([]);
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
     function getActiveSearchAddon() {
         const ref = tabRefs.current[activeTab]?.current;
@@ -1615,6 +1628,7 @@ export default function Radare2Terminal() {
                                         Upload Files
                                     </button>
                                     <input
+                                        ref={fileInputRef}
                                         id="file-upload"
                                         type="file"
                                         multiple
