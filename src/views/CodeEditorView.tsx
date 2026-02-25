@@ -58,6 +58,7 @@ type CodeEditorViewProps = {
     docked?: boolean;
     onFullscreen?: () => void;
     refreshKey?: number;
+    onRun?: (filename: string) => void;
 };
 
 function getLanguageExtension(filename: string): Extension {
@@ -79,7 +80,7 @@ function getLanguageExtension(filename: string): Extension {
     }
 }
 
-export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = false, onFullscreen, refreshKey }: CodeEditorViewProps) {
+export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = false, onFullscreen, refreshKey, onRun }: CodeEditorViewProps) {
     const editorRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
     const [files, setFiles] = useState<DirEntry[]>([]);
@@ -497,6 +498,24 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
                         >
                             New
                         </button>
+                        {onRun && currentFile && (currentFile.endsWith('.r2.js') || currentFile.endsWith('.r2')) && (
+                            <button
+                                onClick={() => onRun(currentFile)}
+                                style={{
+                                    padding: "6px 10px",
+                                    background: "linear-gradient(180deg, #9b59b6, #8e44ad)",
+                                    color: "#fff",
+                                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    fontSize: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                }}
+                            >
+                                Run
+                            </button>
+                        )}
                         <button
                             onClick={handleSave}
                             disabled={!isDirty && !!currentFile}

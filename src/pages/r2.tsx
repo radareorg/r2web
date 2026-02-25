@@ -455,6 +455,19 @@ export default function Radare2Terminal() {
         }
     };
 
+    const handleRunScript = async (filename: string) => {
+        const ref = tabRefs.current[activeTab]?.current;
+        if (!ref) return;
+        const writer = ref.getWriter();
+        if (writer) {
+            const command = `. /mydir/${filename}`;
+            const encoder = new TextEncoder();
+            writer.write(encoder.encode(command));
+            writer.write(encoder.encode("\r"));
+            ref.focus();
+        }
+    };
+
     const handleScriptCancel = async () => {
         setShowScriptConfirm(false);
         const ref = tabRefs.current[activeTab]?.current;
@@ -1725,6 +1738,7 @@ export default function Radare2Terminal() {
                                         onFullscreen={() => {
                                             setCodeEditorFullscreen(true);
                                         }}
+                                        onRun={handleRunScript}
                                     />
                                 </div>
                             )}
