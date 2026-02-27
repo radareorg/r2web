@@ -53,6 +53,7 @@ export default function Radare2Terminal() {
     const [showCodeEditor, setShowCodeEditor] = useState(false);
     const [codeEditorFullscreen, setCodeEditorFullscreen] = useState(false);
     const [codeEditorRefreshKey, setCodeEditorRefreshKey] = useState(0);
+    const [isMobile, setIsMobile] = useState(false);
     const navigate = useNavigate();
 
     // Tabs state
@@ -551,9 +552,19 @@ export default function Radare2Terminal() {
     }, [tabs, activeTab, showHexView, showStringsView, showGraphView, showShortcuts]);
 
     useEffect(() => {
-        if (window.innerWidth < 768) {
-            setSidebarOpen(false);
-        }
+        const checkMobile = () => {
+            const mobile = window.innerWidth < 768;
+            setIsMobile(mobile);
+            if (mobile) {
+                setSidebarOpen(false);
+            } else {
+                setSidebarOpen(true);
+            }
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
     return (
@@ -1692,7 +1703,7 @@ export default function Radare2Terminal() {
                         >
                             <div
                                 style={{
-                                    flex: showCodeEditor && window.innerWidth >= 1024 ? 1 : 1,
+                                    flex: showCodeEditor && !isMobile ? 1 : 1,
                                     minHeight: 0,
                                     position: "relative",
                                     display: "flex",
@@ -1719,7 +1730,7 @@ export default function Radare2Terminal() {
                                     </div>
                                 )}
                             </div>
-                            {showCodeEditor && window.innerWidth >= 1024 && (
+                            {showCodeEditor && !isMobile && (
                                 <div
                                     style={{
                                         width: "50%",
@@ -1767,7 +1778,7 @@ export default function Radare2Terminal() {
                     onClose={() => setShowGraphView(false)}
                 />
             )}
-            {(showCodeEditor && window.innerWidth < 1024) || codeEditorFullscreen && (
+            {(showCodeEditor && isMobile || codeEditorFullscreen) && (
                 <CodeEditorView
                     isOpen={showCodeEditor || codeEditorFullscreen}
                     onClose={() => {

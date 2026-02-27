@@ -357,10 +357,7 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
 
     if (!isOpen) return null;
 
-    const isLargeScreen = !isMobile && window.innerWidth >= 1024;
-    const shouldDock = docked && isLargeScreen;
-
-    if (shouldDock) {
+    if (docked && !isMobile) {
         return (
             <div
                 style={{
