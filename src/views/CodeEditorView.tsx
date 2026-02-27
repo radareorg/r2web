@@ -97,6 +97,7 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
     const [fileToDelete, setFileToDelete] = useState<string>("");
     const [isMobile, setIsMobile] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const handleSaveRef = useRef<() => Promise<void>>(async () => {});
 
     useEffect(() => {
         const checkMobile = () => {
@@ -142,14 +143,14 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
                 {
                     key: "Ctrl-s",
                     run: () => {
-                        handleSave();
+                        handleSaveRef.current();
                         return true;
                     },
                 },
                 {
                     key: "Cmd-s",
                     run: () => {
-                        handleSave();
+                        handleSaveRef.current();
                         return true;
                     },
                 },
@@ -261,7 +262,7 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         if (!dir) return;
 
         const contentToSave = viewRef.current?.state.doc.toString() || content;
@@ -283,7 +284,11 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
         } catch (error) {
             console.error("Error saving file:", error);
         }
-    };
+    }, [dir, currentFile, content, files]);
+
+    useEffect(() => {
+        handleSaveRef.current = handleSave;
+    }, [handleSave]);
 
     const handleSaveAs = async () => {
         if (!dir || !saveAsFileName.trim()) return;
