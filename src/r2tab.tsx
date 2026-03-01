@@ -352,6 +352,27 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
         }
     }, [active, fitAddon, termInstance]);
 
+    useEffect(() => {
+        if (!termInstance) return;
+
+        function handleKeyDown(event: KeyboardEvent) {
+            const { key, ctrlKey, shiftKey, metaKey } = event;
+            if ((key === "C" || key === "c") && shiftKey && (ctrlKey || metaKey)) {
+                event.preventDefault();
+                const selection = termInstance?.getSelection();
+                if (selection) {
+                    navigator.clipboard.writeText(selection).catch((err) => {
+                        console.error("Failed to copy:", err);
+                    });
+                }
+            }
+        }
+
+        // https://stackoverflow.com/a/62976613
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [termInstance]);
+
     return (
         <>
             <div style={{

@@ -554,7 +554,7 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
                                 alignItems: "center",
                             }}
                         >
-                            Close
+                            ×
                         </button>
                     </div>
                 </div>
@@ -1055,7 +1055,7 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
                                 alignItems: "center",
                             }}
                         >
-                            Close
+                            ×
                         </button>
                     </div>
                 </div>

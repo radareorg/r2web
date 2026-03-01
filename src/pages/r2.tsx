@@ -731,6 +731,10 @@ export default function Radare2Terminal() {
                                 <span>Ctrl + V</span>
                             </div>
                             <div>
+                                <span>Copy to clipboard</span>
+                                <span>Ctrl + Shift + C</span>
+                            </div>
+                            <div>
                                 <span>Restart session</span>
                                 <span>Ctrl + R</span>
                             </div>
