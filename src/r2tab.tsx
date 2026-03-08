@@ -160,6 +160,10 @@ export const R2Tab = forwardRef<R2TabHandle, R2TabProps>(({ pkg, file, active },
         onDataDisposableRef.current = term.onData((data) => {
             // Ctrl+C
             if (data === "\x03") {
+                if (term.hasSelection()) {
+                    return;
+                }
+
                 if (cancelController) {
                     cancelController.abort();
                     cancelController = null;

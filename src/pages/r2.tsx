@@ -723,16 +723,12 @@ export default function Radare2Terminal() {
                                 <span>Alt + ←</span>
                             </div>
                             <div>
-                                <span>Cancel current operation</span>
+                                <span>Copy/Cancel text/operation</span>
                                 <span>Ctrl + C</span>
                             </div>
                             <div>
                                 <span>Paste from clipboard</span>
                                 <span>Ctrl + V</span>
-                            </div>
-                            <div>
-                                <span>Copy to clipboard</span>
-                                <span>Ctrl + Shift + C</span>
                             </div>
                             <div>
                                 <span>Restart session</span>
