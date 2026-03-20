@@ -6,7 +6,7 @@ import { javascript, javascriptLanguage, scopeCompletionSource } from "@codemirr
 import { json } from "@codemirror/lang-json";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
-import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
+import { autocompletion, completionKeymap, type CompletionContext, type Completion } from "@codemirror/autocomplete";
 import { type Directory } from "@wasmer/sdk";
 import { ConfirmDialog } from "./ConfirmDialog";
 
@@ -23,6 +23,52 @@ import { aura } from "@ddietr/codemirror-themes/aura";
 import { tokyoNight } from "@ddietr/codemirror-themes/tokyo-night";
 import { tokyoNightStorm } from "@ddietr/codemirror-themes/tokyo-night-storm";
 import { tokyoNightDay } from "@ddietr/codemirror-themes/tokyo-night-day";
+
+const r2Completions: Completion[] = [
+    { label: "cmd", type: "function", info: "cmd(cmd: string): string\nRun a command in the associated instance of radare2", detail: "(cmd)" },
+    { label: "cmdAt", type: "function", info: "cmdAt(cmd: string): string\nRun a radare2 command in a different address", detail: "(cmd)" },
+    { label: "cmdj", type: "function", info: "cmdj(cmd: string): any\nRun a radare2 command expecting the output to be JSON", detail: "(cmd)" },
+    { label: "call", type: "function", info: "call(cmd: string): string\nCall a radare2 command safely without command parsing rules", detail: "(cmd)" },
+    { label: "callAt", type: "function", info: "callAt(cmd: string, at: string | number | any): string\nCall a radare2 command in a different address", detail: "(cmd, at)" },
+    { label: "callj", type: "function", info: "callj(cmd: string): any\nSame as cmdj but using .call which avoids command injection", detail: "(cmd)" },
+    { label: "log", type: "function", info: "log(msg: string): string\nLog a message", detail: "(msg)" },
+    { label: "plugin", type: "function", info: "plugin(type: string, maker: any): boolean\nInstantiate a new radare2 plugin", detail: "(type, maker)" },
+    { label: "unload", type: "function", info: "unload(type: string, name: string): boolean\nUnload a plugin", detail: "(type, name)" },
+];
+
+const r2GlobalCompletions: Completion[] = [
+    { label: "r2", type: "variable", info: "R2Pipe - Global instance of R2Pipe associated with the current instance of radare2" }
+];
+
+function r2CompletionSource(context: CompletionContext) {
+    let r2DotMatch = context.matchBefore(/\br2\.\w*/);
+    if (r2DotMatch) {
+        return {
+            from: r2DotMatch.from + 3,
+            options: r2Completions,
+            validFor: /^\w*$/
+        };
+    }
+
+    let word = context.matchBefore(/\w*/);
+    if (word && word.from !== word.to) {
+        return {
+            from: word.from,
+            options: r2GlobalCompletions,
+            validFor: /^\w*$/
+        };
+    }
+
+    if (context.explicit) {
+        return {
+            from: context.pos,
+            options: r2GlobalCompletions,
+            validFor: /^\w*$/
+        };
+    }
+
+    return null;
+}
 
 type DirEntry = {
     name: string;
@@ -124,6 +170,7 @@ export function CodeEditorView({ isOpen, onClose, dir, onFileSelect, docked = fa
             history(),
             autocompletion({
                 override: [
+                    r2CompletionSource,
                     (context) => {
                         // Provide JavaScript autocompletion
                         if (javascriptLanguage.isActiveAt(context.state, context.pos)) {
