@@ -7,7 +7,7 @@ import { R2Tab, type R2TabHandle } from "../r2tab";
 import { useNavigate } from "react-router-dom";
 import { StringsView } from "../views/StringsView";
 import { HexView, type HexLine } from "../views/HexView";
-import { GraphView } from "../views/GraphView";
+import { CFGView } from "../views/CFGView";
 import { CodeEditorView } from "../views/CodeEditorView";
 
 const HomeIcon = ({ style }: { style?: React.CSSProperties }) => (
@@ -46,7 +46,7 @@ export default function Radare2Terminal() {
     const [showHexView, setShowHexView] = useState(false);
     const [hexData, setHexData] = useState<HexLine[]>([]);
     const [showGraphView, setShowGraphView] = useState(false);
-    const [graphData, setGraphData] = useState<string>("");
+    const [graphData, setGraphData] = useState<any>(null);
     const [showScriptConfirm, setShowScriptConfirm] = useState(false);
     const [scriptFiles, setScriptFiles] = useState<File[]>([]);
     const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
@@ -331,14 +331,15 @@ export default function Radare2Terminal() {
             writer.write(encoder.encode("\r"));
             writer.write(encoder.encode("?e [I] Loading..."));
             writer.write(encoder.encode("\r"));
-            writer.write(encoder.encode("agfma > mydir/.graph"));
+            writer.write(encoder.encode("agfj > mydir/.graph"));
             writer.write(encoder.encode("\r"));
 
             setTimeout(async () => {
                 try {
                     const bytes = await dir.readFile("/.graph");
-                    const output = new TextDecoder().decode(bytes);
-                    setGraphData(output);
+                    const jsonString = new TextDecoder().decode(bytes);
+                    const jsonData = JSON.parse(jsonString);
+                    setGraphData(jsonData);
                     await dir.removeFile("/.graph");
                     setShowGraphView(true);
                 } catch (error) {
@@ -366,7 +367,7 @@ export default function Radare2Terminal() {
 
         setStringsData([]);
         setHexData([]);
-        setGraphData("");
+        setGraphData(null);
 
         tabRefs.current = {};
 
@@ -1772,8 +1773,8 @@ export default function Radare2Terminal() {
                     onSeekAddress={handleSeekAddress}
                 />
             )}
-            {showGraphView && (
-                <GraphView
+            {showGraphView && graphData && (
+                <CFGView
                     graphData={graphData}
                     onClose={() => setShowGraphView(false)}
                 />

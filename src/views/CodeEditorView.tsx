@@ -41,7 +41,7 @@ const r2GlobalCompletions: Completion[] = [
 ];
 
 function r2CompletionSource(context: CompletionContext) {
-    let r2DotMatch = context.matchBefore(/\br2\.\w*/);
+    const r2DotMatch = context.matchBefore(/\br2\.\w*/);
     if (r2DotMatch) {
         return {
             from: r2DotMatch.from + 3,
@@ -50,7 +50,7 @@ function r2CompletionSource(context: CompletionContext) {
         };
     }
 
-    let word = context.matchBefore(/\w*/);
+    const word = context.matchBefore(/\w*/);
     if (word && word.from !== word.to) {
         return {
             from: word.from,

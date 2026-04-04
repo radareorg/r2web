@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
             react: ['react', 'react-dom'],
             xterm: ['xterm', 'xterm-addon-fit'],
             addons: ['@xterm/addon-search', '@xterm/addon-clipboard', '@xterm/addon-web-links'],
-            mermaid: ['mermaid'],
+            elkjs: ['elkjs'],
           },
         },
       },
