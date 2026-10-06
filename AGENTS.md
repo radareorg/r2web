@@ -162,7 +162,7 @@ This pattern is used throughout the auxiliary views (Strings, Hexdump, Graph) to
 
 ### The proxy server is required for non-default versions
 
-- Default version `6.1.8` is loaded from `https://radareorg.github.io/r2wasm/radare2.wasm` directly.
+- Default version `6.2.4` is loaded from `https://radareorg.github.io/r2wasm/radare2.wasm` directly.
 - Other versions are fetched from GitHub releases as a ZIP. Browsers cannot fetch GitHub release ZIPs directly due to CORS, so a proxy is required.
 - `bun cc` runs both Vite and the proxy. The proxy is at `api/wasm.cjs` on port `3000`; Vite proxies `/wasm/:version` to it.
 - In Vercel production, `api/vercel.js` serves the same role.
